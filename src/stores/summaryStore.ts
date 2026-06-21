@@ -1,12 +1,9 @@
-import { getDatabase } from "@/database/db";
+import { DailyFeedQueries } from "@/database/queries/feed.queries";
 import { ProductionQueries } from "@/database/queries/production.queries";
 import { PuyuhQueries } from "@/database/queries/puyuh.queries";
 import { TransactionQueries } from "@/database/queries/transaction.queries";
-import {
-    DailyProduction,
-    DailyProductionInput,
-    MonthlySummary
-} from "@/types";
+import { DailyProduction, DailyProductionInput, MonthlySummary } from "@/types";
+import { getDaysInMonth, storeError } from "@/utils/format";
 import { create } from "zustand";
 
 interface SummaryState {
@@ -27,16 +24,6 @@ interface SummaryState {
   clearError: () => void;
 }
 
-function getDateRange(year: number, month: number) {
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
-
-  return {
-    start: start.toISOString().split("T")[0],
-    end: end.toISOString().split("T")[0],
-  };
-}
-
 export const useSummaryStore = create<SummaryState>((set, get) => ({
   isLoading: false,
   error: null,
@@ -47,47 +34,19 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   loadMonthlySummary: async (year: number, month: number) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      const { start, end } = getDateRange(year, month);
+      const [prodStats, finStats, allPuyuhs, puyuhDied, feedCosts] = await Promise.all([
+        ProductionQueries.getMonthlyStats(year, month),
+        TransactionQueries.getMonthlySummary(year, month),
+        PuyuhQueries.getAll(),
+        PuyuhQueries.getTotalDeadThisMonth(year, month),
+        DailyFeedQueries.getMonthlyTotalAll(year, month),
+      ]);
 
-      // Get production stats
-      const prodStats = await ProductionQueries.getMonthlyStats(
-        db,
-        year,
-        month,
-      );
-
-      // Get financial summary
-      const finStats = await TransactionQueries.getMonthlySummary(
-        db,
-        year,
-        month,
-      );
-
-      // Get puyuh summary
-      const allPuyuhs = await PuyuhQueries.getAll(db);
       const puyuhByAge = allPuyuhs.map((p) => ({
         age_months: p.age_months,
         count: p.count,
         status: p.status,
       }));
-
-      // Get puyuh that died
-      const puyuhDied = await PuyuhQueries.getTotalDeadThisMonth(
-        db,
-        year,
-        month,
-      );
-
-      // Get feed costs
-      const feedCosts = await db.getFirstAsync<{
-        total_cost: number;
-        total_kg: number;
-      }>(
-        `SELECT SUM(cost) as total_cost, SUM(total_amount) as total_kg FROM daily_feed
-         WHERE date BETWEEN ? AND ?`,
-        [start, end],
-      );
 
       const summary: MonthlySummary = {
         period: `${year}-${String(month).padStart(2, "0")}`,
@@ -99,10 +58,13 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
         eggs_sold: prodStats.total_eggs_sold,
         eggs_available: prodStats.total_eggs_available,
         avg_eggs_per_day: prodStats.avg_eggs_per_day,
-        total_feed_cost: feedCosts?.total_cost || 0,
-        total_feed_kg: feedCosts?.total_kg || 0,
-        avg_feed_per_day: feedCosts?.total_kg
-          ? Math.round((feedCosts.total_kg / 30) * 100) / 100
+        avg_price_per_egg: prodStats.avg_price_per_egg,
+        total_feed_cost: feedCosts.total_cost,
+        total_feed_kg: feedCosts.total_kg,
+        avg_feed_per_day: feedCosts.total_kg
+          ? Math.round(
+              (feedCosts.total_kg / getDaysInMonth(year, month)) * 100,
+            ) / 100
           : 0,
         total_income: finStats.total_income,
         total_expense: finStats.total_expense,
@@ -123,8 +85,7 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
       set({ monthlySummary: summary, isLoading: false });
     } catch (error) {
       set({
-        error:
-          error instanceof Error ? error.message : "Failed to load summary",
+        error: storeError(error, "Failed to load summary"),
         isLoading: false,
       });
     }
@@ -133,8 +94,7 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   loadDailyProduction: async (date: string) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      const production = await ProductionQueries.getByDate(db, date);
+      const production = await ProductionQueries.getByDate(date);
 
       set({
         dailyProduction: production,
@@ -143,10 +103,7 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to load daily production",
+        error: storeError(error, "Failed to load daily production"),
         isLoading: false,
       });
     }
@@ -155,15 +112,11 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   addDailyProduction: async (input: DailyProductionInput) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      await ProductionQueries.create(db, input);
+      await ProductionQueries.create(input);
       await get().loadDailyProduction(input.date);
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to add production record",
+        error: storeError(error, "Failed to add production record"),
         isLoading: false,
       });
     }
@@ -175,17 +128,13 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   ) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      const updated = await ProductionQueries.update(db, id, input);
+      const updated = await ProductionQueries.update(id, input);
       if (updated) {
         set({ dailyProduction: updated, isLoading: false });
       }
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to update production",
+        error: storeError(error, "Failed to update production"),
         isLoading: false,
       });
     }

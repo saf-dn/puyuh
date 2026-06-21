@@ -1,9 +1,9 @@
+import { fadedColor } from "@/constants/theme";
 import { PuyuhInput, PuyuhStatus } from "@/types";
 import { DarkTheme, DefaultTheme } from "expo-router";
 import { useState } from "react";
 import {
     Modal,
-    Picker,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -36,6 +36,14 @@ export function PuyuhForm({
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  const resetForm = () => {
+    setAgeMonths("");
+    setCount("");
+    setStatus(PuyuhStatus.ACTIVE);
+    setNotes("");
+    setErrors({});
+  };
+
   const handleSubmit = async () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -61,12 +69,7 @@ export function PuyuhForm({
         notes: notes || undefined,
       });
 
-      // Reset form
-      setAgeMonths("");
-      setCount("");
-      setStatus(PuyuhStatus.ACTIVE);
-      setNotes("");
-      setErrors({});
+      resetForm();
       onClose();
     } catch (error) {
       setErrors({
@@ -85,7 +88,9 @@ export function PuyuhForm({
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.card }]}>
           <Pressable onPress={onClose}>
-            <Text style={[styles.closeButton, { color: colors.tint }]}>✕</Text>
+            <Text style={[styles.closeButton, { color: colors.primary }]}>
+              ✕
+            </Text>
           </Pressable>
           <Text style={[styles.title, { color: colors.text }]}>
             Tambah Grup Puyuh
@@ -94,7 +99,7 @@ export function PuyuhForm({
             <Text
               style={[
                 styles.saveButton,
-                { color: colors.tint, opacity: isLoading ? 0.5 : 1 },
+                { color: colors.primary, opacity: isLoading ? 0.5 : 1 },
               ]}
             >
               {isLoading ? "..." : "Simpan"}
@@ -117,7 +122,7 @@ export function PuyuhForm({
                 },
               ]}
               placeholder="0"
-              placeholderTextColor={colors.text + "80"}
+              placeholderTextColor={fadedColor(colors.text)}
               keyboardType="number-pad"
               value={ageMonths}
               onChangeText={(text) => {
@@ -146,7 +151,7 @@ export function PuyuhForm({
                 },
               ]}
               placeholder="0"
-              placeholderTextColor={colors.text + "80"}
+              placeholderTextColor={fadedColor(colors.text)}
               keyboardType="number-pad"
               value={count}
               onChangeText={(text) => {
@@ -164,18 +169,35 @@ export function PuyuhForm({
           {/* Status */}
           <View style={styles.field}>
             <Text style={[styles.label, { color: colors.text }]}>Status</Text>
-            <View
-              style={[styles.pickerContainer, { borderColor: colors.card }]}
-            >
-              <Picker
-                selectedValue={status}
-                onValueChange={(itemValue) => setStatus(itemValue)}
-                style={{ color: colors.text }}
-              >
-                <Picker.Item label="Aktif" value={PuyuhStatus.ACTIVE} />
-                <Picker.Item label="Tidak Aktif" value={PuyuhStatus.INACTIVE} />
-                <Picker.Item label="Sakit" value={PuyuhStatus.SICK} />
-              </Picker>
+            <View style={styles.statusRow}>
+              {[
+                { label: "Aktif", value: PuyuhStatus.ACTIVE },
+                { label: "Tidak Aktif", value: PuyuhStatus.INACTIVE },
+                { label: "Sakit", value: PuyuhStatus.SICK },
+              ].map((option) => (
+                <Pressable
+                  key={option.value}
+                  style={[
+                    styles.statusBtn,
+                    {
+                      backgroundColor:
+                        status === option.value ? colors.primary : colors.card,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  onPress={() => setStatus(option.value)}
+                >
+                  <Text
+                    style={{
+                      color: status === option.value ? "white" : colors.text,
+                      fontSize: 12,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
           </View>
 
@@ -190,13 +212,22 @@ export function PuyuhForm({
                 { color: colors.text, borderColor: colors.card },
               ]}
               placeholder="Tambahkan informasi tambahan..."
-              placeholderTextColor={colors.text + "80"}
+              placeholderTextColor={fadedColor(colors.text)}
               value={notes}
               onChangeText={setNotes}
               multiline
               numberOfLines={3}
             />
           </View>
+
+          {/* Reset Button */}
+          <Pressable
+            style={styles.resetBtn}
+            onPress={resetForm}
+            disabled={isLoading}
+          >
+            <Text style={styles.resetBtnText}>🔄 Reset Form</Text>
+          </Pressable>
 
           {errors.submit && (
             <Text style={[styles.errorText, { marginHorizontal: 16 }]}>
@@ -260,9 +291,34 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
   },
+  statusRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  statusBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+  },
   errorText: {
     color: "#ff6b6b",
     fontSize: 12,
     marginTop: 4,
+  },
+  resetBtn: {
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center" as const,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    marginTop: 8,
+  },
+  resetBtnText: {
+    color: "#9E9E9E",
+    fontSize: 14,
+    fontWeight: "600" as const,
   },
 });

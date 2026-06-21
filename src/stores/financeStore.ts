@@ -1,15 +1,15 @@
-import { getDatabase } from "@/database/db";
 import {
-    CategoryQueries,
-    TransactionQueries,
+  CategoryQueries,
+  TransactionQueries,
 } from "@/database/queries/transaction.queries";
 import {
-    ExpenseCategory,
-    IncomeCategory,
-    Transaction,
-    TransactionInput,
-    TransactionType,
+  ExpenseCategory,
+  IncomeCategory,
+  Transaction,
+  TransactionInput,
+  TransactionType,
 } from "@/types";
+import { getDateRange, storeError } from "@/utils/format";
 import { create } from "zustand";
 
 interface FinanceState {
@@ -33,16 +33,6 @@ interface FinanceState {
   clearError: () => void;
 }
 
-function getDateRange(year: number, month: number) {
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
-
-  return {
-    start: start.toISOString().split("T")[0],
-    end: end.toISOString().split("T")[0],
-  };
-}
-
 export const useFinanceStore = create<FinanceState>((set, get) => ({
   isLoading: false,
   error: null,
@@ -58,34 +48,40 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   loadFinanceData: async (year: number, month: number) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
       const { start, end } = getDateRange(year, month);
 
-      const income = await TransactionQueries.getRange(
-        db,
-        start,
-        end,
-        TransactionType.INCOME,
+      const [income, expense, incomeCategories, expenseCategories] =
+        await Promise.all([
+          TransactionQueries.getRange(start, end, TransactionType.INCOME),
+          TransactionQueries.getRange(start, end, TransactionType.EXPENSE),
+          CategoryQueries.getIncomeCategories(),
+          CategoryQueries.getExpenseCategories(),
+        ]);
+
+      const incomeCategoryMap = new Map(
+        incomeCategories.map((category) => [category.id, category]),
       );
-      const expense = await TransactionQueries.getRange(
-        db,
-        start,
-        end,
-        TransactionType.EXPENSE,
+      const expenseCategoryMap = new Map(
+        expenseCategories.map((category) => [category.id, category]),
       );
 
       set({
-        incomeTransactions: income,
-        expenseTransactions: expense,
+        incomeTransactions: income.map((transaction) => ({
+          ...transaction,
+          category: incomeCategoryMap.get(transaction.category_id),
+        })),
+        expenseTransactions: expense.map((transaction) => ({
+          ...transaction,
+          category: expenseCategoryMap.get(transaction.category_id),
+        })),
+        incomeCategories,
+        expenseCategories,
         currentMonth: { year, month },
         isLoading: false,
       });
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to load finance data",
+        error: storeError(error, "Failed to load finance data"),
         isLoading: false,
       });
     }
@@ -94,34 +90,27 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   addTransaction: async (input: TransactionInput) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      await TransactionQueries.create(db, input);
+      await TransactionQueries.create(input);
 
       const { currentMonth } = get();
       await get().loadFinanceData(currentMonth.year, currentMonth.month);
     } catch (error) {
-      set({
-        error:
-          error instanceof Error ? error.message : "Failed to add transaction",
-        isLoading: false,
-      });
+      const message = storeError(error, "Gagal menambah transaksi");
+      set({ error: message, isLoading: false });
+      throw new Error(message);
     }
   },
 
   updateTransaction: async (id: string, input: Partial<TransactionInput>) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      await TransactionQueries.update(db, id, input);
+      await TransactionQueries.update(id, input);
 
       const { currentMonth } = get();
       await get().loadFinanceData(currentMonth.year, currentMonth.month);
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to update transaction",
+        error: storeError(error, "Failed to update transaction"),
         isLoading: false,
       });
     }
@@ -130,17 +119,13 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   deleteTransaction: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      await TransactionQueries.delete(db, id);
+      await TransactionQueries.delete(id);
 
       const { currentMonth } = get();
       await get().loadFinanceData(currentMonth.year, currentMonth.month);
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to delete transaction",
+        error: storeError(error, "Failed to delete transaction"),
         isLoading: false,
       });
     }
@@ -148,9 +133,10 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
   loadCategories: async () => {
     try {
-      const db = await getDatabase();
-      const income = await CategoryQueries.getIncomeCategories(db);
-      const expense = await CategoryQueries.getExpenseCategories(db);
+      const [income, expense] = await Promise.all([
+        CategoryQueries.getIncomeCategories(),
+        CategoryQueries.getExpenseCategories(),
+      ]);
 
       set({
         incomeCategories: income,

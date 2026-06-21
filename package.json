@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~56.0.18",
+    "@react-native-picker/picker": "2.11.4",
+    "@supabase/supabase-js": "^2.108.2",
     "date-fns": "^4.4.0",
     "decimal.js": "^10.6.0",
     "expo": "~56.0.12",
@@ -44,7 +46,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "smoke-test": "node scripts/smoke-test.mjs",
+    "export:web": "expo export --platform web"
   },
   "private": true
 }

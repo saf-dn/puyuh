@@ -1,18 +1,23 @@
+import { fadedColor } from "@/constants/theme";
 import { DarkTheme, DefaultTheme } from "expo-router";
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Modal,
-    Picker,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    useColorScheme,
-    View
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  useColorScheme,
+  View,
 } from "react-native";
+
+interface Option {
+  id: string;
+  name: string;
+}
 
 interface FeedFormProps {
   visible: boolean;
@@ -22,10 +27,61 @@ interface FeedFormProps {
     feedTypeId: string;
     frequencyPerDay: number;
     amountPerBird: number;
-  }) => void;
-  puyuhGroups: Array<{ id: string; name: string }>;
-  feedTypes: Array<{ id: string; name: string }>;
+  }) => Promise<void>;
+  puyuhGroups: { id: string; name: string; count: number }[];
+  feedTypes: { id: string; name: string }[];
   loading?: boolean;
+}
+
+function ChipSelect({
+  options,
+  selectedId,
+  onSelect,
+  colors,
+}: {
+  options: Option[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+  colors: (typeof DarkTheme)["colors"];
+}) {
+  if (options.length === 0) {
+    return (
+      <Text style={{ color: colors.text, opacity: 0.6, fontSize: 13 }}>
+        Tidak ada pilihan tersedia
+      </Text>
+    );
+  }
+
+  return (
+    <View style={styles.chipRow}>
+      {options.map((option) => {
+        const selected = selectedId === option.id;
+        return (
+          <Pressable
+            key={option.id}
+            style={[
+              styles.chip,
+              {
+                backgroundColor: selected ? colors.primary : colors.card,
+                borderColor: selected ? colors.primary : colors.border,
+              },
+            ]}
+            onPress={() => onSelect(option.id)}
+          >
+            <Text
+              style={{
+                color: selected ? "white" : colors.text,
+                fontSize: 12,
+                fontWeight: "600",
+              }}
+            >
+              {option.name}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 }
 
 export default function FeedForm({
@@ -92,20 +148,25 @@ export default function FeedForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit({
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await onSubmit({
         puyuhGroupId: formData.puyuhGroupId,
         feedTypeId: formData.feedTypeId,
         frequencyPerDay: Number(formData.frequencyPerDay),
         amountPerBird: Number(formData.amountPerBird),
       });
-      resetForm();
+      onClose();
+    } catch {
+      // Error handled by parent store
     }
   };
 
   const handleClose = () => {
-    resetForm();
     onClose();
   };
 
@@ -113,7 +174,7 @@ export default function FeedForm({
   const totalAmountPerDay = selectedGroup
     ? ((Number(formData.amountPerBird) || 0) *
         (Number(formData.frequencyPerDay) || 0) *
-        (selectedGroup.count || 0)) /
+        selectedGroup.count) /
       1000
     : 0;
 
@@ -130,14 +191,14 @@ export default function FeedForm({
       >
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable onPress={handleClose}>
-            <Text style={{ color: colors.tint, fontSize: 16 }}>Batal</Text>
+            <Text style={{ color: colors.primary, fontSize: 16 }}>Batal</Text>
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             Pemberian Pakan Hari Ini
           </Text>
           <Pressable onPress={handleSubmit} disabled={loading}>
             <Text
-              style={{ color: colors.tint, fontSize: 16, fontWeight: "600" }}
+              style={{ color: colors.primary, fontSize: 16, fontWeight: "600" }}
             >
               {loading ? "Simpan..." : "Simpan"}
             </Text>
@@ -157,49 +218,14 @@ export default function FeedForm({
               <Text style={[styles.label, { color: colors.text }]}>
                 Kelompok Puyuh *
               </Text>
-              <View
-                style={[
-                  styles.pickerContainer,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                {Platform.OS === "ios" ? (
-                  <Picker
-                    selectedValue={formData.puyuhGroupId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, puyuhGroupId: value })
-                    }
-                    itemStyle={{ color: colors.text }}
-                  >
-                    {puyuhGroups.map((group) => (
-                      <Picker.Item
-                        key={group.id}
-                        label={group.name}
-                        value={group.id}
-                      />
-                    ))}
-                  </Picker>
-                ) : (
-                  <Picker
-                    selectedValue={formData.puyuhGroupId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, puyuhGroupId: value })
-                    }
-                    style={{ color: colors.text }}
-                  >
-                    {puyuhGroups.map((group) => (
-                      <Picker.Item
-                        key={group.id}
-                        label={group.name}
-                        value={group.id}
-                      />
-                    ))}
-                  </Picker>
-                )}
-              </View>
+              <ChipSelect
+                options={puyuhGroups}
+                selectedId={formData.puyuhGroupId}
+                onSelect={(id) =>
+                  setFormData({ ...formData, puyuhGroupId: id })
+                }
+                colors={colors}
+              />
               {errors.puyuhGroupId && (
                 <Text style={styles.errorText}>{errors.puyuhGroupId}</Text>
               )}
@@ -209,49 +235,12 @@ export default function FeedForm({
               <Text style={[styles.label, { color: colors.text }]}>
                 Jenis Pakan *
               </Text>
-              <View
-                style={[
-                  styles.pickerContainer,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                {Platform.OS === "ios" ? (
-                  <Picker
-                    selectedValue={formData.feedTypeId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, feedTypeId: value })
-                    }
-                    itemStyle={{ color: colors.text }}
-                  >
-                    {feedTypes.map((type) => (
-                      <Picker.Item
-                        key={type.id}
-                        label={type.name}
-                        value={type.id}
-                      />
-                    ))}
-                  </Picker>
-                ) : (
-                  <Picker
-                    selectedValue={formData.feedTypeId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, feedTypeId: value })
-                    }
-                    style={{ color: colors.text }}
-                  >
-                    {feedTypes.map((type) => (
-                      <Picker.Item
-                        key={type.id}
-                        label={type.name}
-                        value={type.id}
-                      />
-                    ))}
-                  </Picker>
-                )}
-              </View>
+              <ChipSelect
+                options={feedTypes}
+                selectedId={formData.feedTypeId}
+                onSelect={(id) => setFormData({ ...formData, feedTypeId: id })}
+                colors={colors}
+              />
               {errors.feedTypeId && (
                 <Text style={styles.errorText}>{errors.feedTypeId}</Text>
               )}
@@ -272,8 +261,8 @@ export default function FeedForm({
                       : colors.border,
                   },
                 ]}
-                placeholder="Masukkan frekuensi (contoh: 3)"
-                placeholderTextColor={colors.text + "80"}
+                placeholder="Contoh: 3"
+                placeholderTextColor={fadedColor(colors.text)}
                 keyboardType="decimal-pad"
                 value={formData.frequencyPerDay}
                 onChangeText={(text) =>
@@ -301,8 +290,8 @@ export default function FeedForm({
                       : colors.border,
                   },
                 ]}
-                placeholder="Masukkan jumlah dalam gram"
-                placeholderTextColor={colors.text + "80"}
+                placeholder="Contoh: 25"
+                placeholderTextColor={fadedColor(colors.text)}
                 keyboardType="decimal-pad"
                 value={formData.amountPerBird}
                 onChangeText={(text) =>
@@ -330,13 +319,20 @@ export default function FeedForm({
                 </Text>
               </View>
               <Text style={[styles.summaryNote, { color: colors.text }]}>
-                (
                 {selectedGroup
                   ? `${selectedGroup.count} ekor × ${formData.amountPerBird || 0}g × ${formData.frequencyPerDay || 0}x`
                   : "Pilih kelompok terlebih dahulu"}
-                )
               </Text>
             </View>
+
+            {/* Reset Button */}
+            <Pressable
+              style={[styles.resetBtn, { borderColor: colors.border }]}
+              onPress={resetForm}
+              disabled={loading}
+            >
+              <Text style={styles.resetBtnText}>🔄 Reset Form</Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -345,9 +341,7 @@ export default function FeedForm({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -357,29 +351,12 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 20,
-  },
-  section: {
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
+  headerTitle: { fontSize: 18, fontWeight: "700" },
+  scrollContent: { padding: 16, gap: 20 },
+  section: { gap: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: "600", marginBottom: 8 },
+  inputGroup: { gap: 8 },
+  label: { fontSize: 13, fontWeight: "600" },
   input: {
     borderWidth: 1,
     borderRadius: 8,
@@ -387,38 +364,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
   },
-  pickerContainer: {
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     borderWidth: 1,
-    borderRadius: 8,
-    overflow: "hidden",
   },
-  errorText: {
-    color: "#C62828",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  summaryBox: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 8,
-  },
+  errorText: { color: "#C62828", fontSize: 12, fontWeight: "500" },
+  summaryBox: { borderWidth: 1, borderRadius: 8, padding: 12, marginTop: 8 },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  summaryLabel: {
-    fontSize: 13,
-    fontWeight: "600",
+  summaryLabel: { fontSize: 13, fontWeight: "600" },
+  summaryValue: { fontSize: 14, fontWeight: "700" },
+  summaryNote: { fontSize: 11, marginTop: 4, opacity: 0.7 },
+  resetBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center" as const,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    marginTop: 12,
   },
-  summaryValue: {
+  resetBtnText: {
+    color: "#9E9E9E",
     fontSize: 14,
-    fontWeight: "700",
-  },
-  summaryNote: {
-    fontSize: 11,
-    marginTop: 4,
-    opacity: 0.7,
+    fontWeight: "600" as const,
   },
 });

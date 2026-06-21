@@ -1,11 +1,13 @@
 import { DailyFeedQueries } from "@/database/queries/feed.queries";
-import { getDatabase } from "@/database/db";
 import { DailyFeed } from "@/types";
+import { getDateRange, storeError } from "@/utils/format";
 import { create } from "zustand";
 
 interface FeedStore {
   feeds: DailyFeed[];
-  loading: boolean;
+  dailyFeedKg: number;
+  monthlyFeedKg: number;
+  isLoading: boolean;
   error: string | null;
   loadFeeds: (year: number, month: number) => Promise<void>;
   addFeed: (data: {
@@ -17,59 +19,60 @@ interface FeedStore {
   clearError: () => void;
 }
 
-function getDateRange(year: number, month: number) {
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
-
-  return {
-    start: start.toISOString().split("T")[0],
-    end: end.toISOString().split("T")[0],
-  };
-}
-
 export const useFeedStore = create<FeedStore>((set, get) => ({
   feeds: [],
-  loading: false,
+  dailyFeedKg: 0,
+  monthlyFeedKg: 0,
+  isLoading: false,
   error: null,
 
   loadFeeds: async (year: number, month: number) => {
     try {
-      set({ loading: true, error: null });
-      const db = await getDatabase();
+      set({ isLoading: true, error: null });
       const { start, end } = getDateRange(year, month);
-      const data = await DailyFeedQueries.getRange(db, start, end);
-      set({ feeds: data });
-    } catch (err) {
+      const today = new Date().toISOString().split("T")[0];
+
+      const [feeds, dailyTotal, monthlyTotal] = await Promise.all([
+        DailyFeedQueries.getRange(start, end),
+        DailyFeedQueries.getDailyTotal(today),
+        DailyFeedQueries.getMonthlyTotalAll(year, month),
+      ]);
+
       set({
-        error: `Failed to load feeds: ${err instanceof Error ? err.message : "Unknown error"}`,
+        feeds,
+        dailyFeedKg: dailyTotal.total_kg,
+        monthlyFeedKg: monthlyTotal.total_kg,
+        isLoading: false,
       });
-    } finally {
-      set({ loading: false });
+    } catch (error) {
+      set({
+        error: storeError(error, "Gagal memuat data pakan"),
+        isLoading: false,
+      });
     }
   },
 
   addFeed: async (data) => {
     try {
-      set({ loading: true, error: null });
-      const db = await getDatabase();
+      set({ isLoading: true, error: null });
       const today = new Date();
-      await DailyFeedQueries.create(db, {
-        date: today.toISOString().split("T")[0],
+      const date = today.toISOString().split("T")[0];
+
+      await DailyFeedQueries.create({
+        date,
         puyuh_id: data.puyuhGroupId,
         feed_type_id: data.feedTypeId,
         frequency_per_day: data.frequencyPerDay,
         amount_per_bird: data.amountPerBird,
       });
-      // Reload feeds for the current month
+
       const year = today.getFullYear();
       const month = today.getMonth() + 1;
       await get().loadFeeds(year, month);
-    } catch (err) {
-      set({
-        error: `Failed to add feed: ${err instanceof Error ? err.message : "Unknown error"}`,
-      });
-    } finally {
-      set({ loading: false });
+    } catch (error) {
+      const message = storeError(error, "Gagal mencatat pakan");
+      set({ error: message, isLoading: false });
+      throw new Error(message);
     }
   },
 

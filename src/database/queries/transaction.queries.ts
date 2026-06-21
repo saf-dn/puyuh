@@ -1,29 +1,30 @@
-import { SQLiteDatabase } from "expo-sqlite";
+import { supabase } from "@/database/supabase";
+import {
+    ExpenseCategory,
+    IncomeCategory,
+    Transaction,
+    TransactionInput,
+    TransactionType,
+} from "@/types";
 import { v4 as uuid } from "uuid";
-import { Transaction, TransactionInput, TransactionType } from "@/types";
 
 export const TransactionQueries = {
-  async create(
-    db: SQLiteDatabase,
-    input: TransactionInput,
-  ): Promise<Transaction> {
+  async create(input: TransactionInput): Promise<Transaction> {
     const id = uuid();
     const now = new Date().toISOString();
+    const row = {
+      id,
+      date: input.date,
+      transaction_type: input.transaction_type,
+      category_id: input.category_id,
+      amount: input.amount,
+      description: input.description || null,
+      created_at: now,
+      updated_at: now,
+    };
 
-    await db.runAsync(
-      `INSERT INTO transaction (id, date, transaction_type, category_id, amount, description, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        input.date,
-        input.transaction_type,
-        input.category_id,
-        input.amount,
-        input.description || null,
-        now,
-        now,
-      ],
-    );
+    const { error } = await supabase.from("transactions").insert(row);
+    if (error) throw new Error(error.message);
 
     return {
       id,
@@ -37,147 +38,121 @@ export const TransactionQueries = {
     };
   },
 
-  async getById(db: SQLiteDatabase, id: string): Promise<Transaction | null> {
-    const result = await db.getFirstAsync<Transaction>(
-      "SELECT * FROM transaction WHERE id = ?",
-      [id],
-    );
-    return result || null;
+  async getById(id: string): Promise<Transaction | null> {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data || null;
   },
 
-  async getByType(
-    db: SQLiteDatabase,
-    type: TransactionType,
-  ): Promise<Transaction[]> {
-    const results = await db.getAllAsync<Transaction>(
-      "SELECT * FROM transaction WHERE transaction_type = ? ORDER BY date DESC, created_at DESC",
-      [type],
-    );
-    return results;
+  async getByType(type: TransactionType): Promise<Transaction[]> {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("transaction_type", type)
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data || [];
   },
 
-  async getByDate(db: SQLiteDatabase, date: string): Promise<Transaction[]> {
-    const results = await db.getAllAsync<Transaction>(
-      "SELECT * FROM transaction WHERE date = ? ORDER BY created_at DESC",
-      [date],
-    );
-    return results;
+  async getByDate(date: string): Promise<Transaction[]> {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("date", date)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data || [];
   },
 
   async getRange(
-    db: SQLiteDatabase,
     startDate: string,
     endDate: string,
     type?: TransactionType,
   ): Promise<Transaction[]> {
-    let query =
-      "SELECT * FROM transaction WHERE date BETWEEN ? AND ? ORDER BY date DESC, created_at DESC";
-    const params: any[] = [startDate, endDate];
+    let query = supabase
+      .from("transactions")
+      .select("*")
+      .gte("date", startDate)
+      .lte("date", endDate);
+    if (type) query = query.eq("transaction_type", type);
+    query = query
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
 
-    if (type) {
-      query = query.replace("ORDER BY", `AND transaction_type = ? ORDER BY`);
-      params.splice(2, 0, type);
-    }
-
-    const results = await db.getAllAsync<Transaction>(query, params);
-    return results;
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return data || [];
   },
 
-  async getByCategory(
-    db: SQLiteDatabase,
-    categoryId: string,
-  ): Promise<Transaction[]> {
-    const results = await db.getAllAsync<Transaction>(
-      "SELECT * FROM transaction WHERE category_id = ? ORDER BY date DESC, created_at DESC",
-      [categoryId],
-    );
-    return results;
+  async getByCategory(categoryId: string): Promise<Transaction[]> {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("category_id", categoryId)
+      .order("date", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data || [];
   },
 
-  async getMonthlySummary(
-    db: SQLiteDatabase,
-    year: number,
-    month: number,
-  ): Promise<{
-    total_income: number;
-    total_expense: number;
-    income_by_category: Record<string, number>;
-    expense_by_category: Record<string, number>;
-  }> {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
-    const startStr = startDate.toISOString().split("T")[0];
-    const endStr = endDate.toISOString().split("T")[0];
+  async getMonthlySummary(year: number, month: number) {
+    const startStr = new Date(year, month - 1, 1).toISOString().split("T")[0];
+    const endStr = new Date(year, month, 0).toISOString().split("T")[0];
 
-    // Get income and expense totals
-    const summary = await db.getFirstAsync<{
-      total_income: number;
-      total_expense: number;
-    }>(
-      `SELECT
-        SUM(CASE WHEN transaction_type = 'INCOME' THEN amount ELSE 0 END) as total_income,
-        SUM(CASE WHEN transaction_type = 'EXPENSE' THEN amount ELSE 0 END) as total_expense
-       FROM transaction
-       WHERE date BETWEEN ? AND ?`,
-      [startStr, endStr],
-    );
+    const { data: txns, error } = await supabase
+      .from("transactions")
+      .select("transaction_type, category_id, amount")
+      .gte("date", startStr)
+      .lte("date", endStr);
+    if (error) throw new Error(error.message);
 
-    // Get income by category
-    const incomeByCategory = await db.getAllAsync<{
-      name: string;
-      total: number;
-    }>(
-      `SELECT ic.name, SUM(t.amount) as total
-       FROM transaction t
-       JOIN income_category ic ON t.category_id = ic.id
-       WHERE t.transaction_type = 'INCOME' AND t.date BETWEEN ? AND ?
-       GROUP BY t.category_id`,
-      [startStr, endStr],
-    );
+    const { data: incCats } = await supabase
+      .from("income_category")
+      .select("id, name");
+    const { data: expCats } = await supabase
+      .from("expense_category")
+      .select("id, name");
 
-    // Get expense by category
-    const expenseByCategory = await db.getAllAsync<{
-      name: string;
-      total: number;
-    }>(
-      `SELECT ec.name, SUM(t.amount) as total
-       FROM transaction t
-       JOIN expense_category ec ON t.category_id = ec.id
-       WHERE t.transaction_type = 'EXPENSE' AND t.date BETWEEN ? AND ?
-       GROUP BY t.category_id`,
-      [startStr, endStr],
-    );
+    const incMap = new Map((incCats || []).map((c: any) => [c.id, c.name]));
+    const expMap = new Map((expCats || []).map((c: any) => [c.id, c.name]));
 
+    let total_income = 0,
+      total_expense = 0;
     const income_by_category: Record<string, number> = {};
     const expense_by_category: Record<string, number> = {};
 
-    incomeByCategory.forEach((item) => {
-      income_by_category[item.name] = item.total;
-    });
-
-    expenseByCategory.forEach((item) => {
-      expense_by_category[item.name] = item.total;
-    });
+    for (const t of txns || []) {
+      if (t.transaction_type === "INCOME") {
+        total_income += t.amount;
+        const name = incMap.get(t.category_id) || "Unknown";
+        income_by_category[name] = (income_by_category[name] || 0) + t.amount;
+      } else {
+        total_expense += t.amount;
+        const name = expMap.get(t.category_id) || "Unknown";
+        expense_by_category[name] = (expense_by_category[name] || 0) + t.amount;
+      }
+    }
 
     return {
-      total_income: summary?.total_income || 0,
-      total_expense: summary?.total_expense || 0,
+      total_income,
+      total_expense,
       income_by_category,
       expense_by_category,
     };
   },
 
   async update(
-    db: SQLiteDatabase,
     id: string,
     input: Partial<TransactionInput>,
   ): Promise<Transaction | null> {
-    const current = await this.getById(db, id);
+    const current = await this.getById(id);
     if (!current) return null;
-
     const now = new Date().toISOString();
-
-    const updated: Transaction = {
+    const updated = {
       ...current,
       ...input,
       id: current.id,
@@ -185,60 +160,64 @@ export const TransactionQueries = {
       updated_at: now,
     };
 
-    await db.runAsync(
-      `UPDATE transaction SET date = ?, transaction_type = ?, category_id = ?, amount = ?, description = ?, updated_at = ?
-       WHERE id = ?`,
-      [
-        updated.date,
-        updated.transaction_type,
-        updated.category_id,
-        updated.amount,
-        updated.description || null,
-        now,
-        id,
-      ],
-    );
-
+    const { error } = await supabase
+      .from("transactions")
+      .update({
+        date: updated.date,
+        transaction_type: updated.transaction_type,
+        category_id: updated.category_id,
+        amount: updated.amount,
+        description: updated.description || null,
+        updated_at: now,
+      })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
     return updated;
   },
 
-  async delete(db: SQLiteDatabase, id: string): Promise<boolean> {
-    const result = await db.runAsync("DELETE FROM transaction WHERE id = ?", [
-      id,
-    ]);
-    return (result?.changes || 0) > 0;
+  async delete(id: string): Promise<boolean> {
+    const { error } = await supabase.from("transactions").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+    return true;
   },
 };
 
-// Category queries
 export const CategoryQueries = {
-  async getExpenseCategories(db: SQLiteDatabase) {
-    const results = await db.getAllAsync(
-      "SELECT * FROM expense_category ORDER BY name ASC",
-    );
-    return results;
+  async getExpenseCategories(): Promise<ExpenseCategory[]> {
+    const { data, error } = await supabase
+      .from("expense_category")
+      .select("*")
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data || [];
   },
 
-  async getIncomeCategories(db: SQLiteDatabase) {
-    const results = await db.getAllAsync(
-      "SELECT * FROM income_category ORDER BY name ASC",
-    );
-    return results;
+  async getIncomeCategories(): Promise<IncomeCategory[]> {
+    const { data, error } = await supabase
+      .from("income_category")
+      .select("*")
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data || [];
   },
 
-  async getExpenseCategoryById(db: SQLiteDatabase, id: string) {
-    const result = await db.getFirstAsync(
-      "SELECT * FROM expense_category WHERE id = ?",
-      [id],
-    );
-    return result || null;
+  async getExpenseCategoryById(id: string) {
+    const { data, error } = await supabase
+      .from("expense_category")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data || null;
   },
 
-  async getIncomeCategoryById(db: SQLiteDatabase, id: string) {
-    const result = await db.getFirstAsync(
-      "SELECT * FROM income_category WHERE id = ?",
-      [id],
-    );
-    return result || null;
+  async getIncomeCategoryById(id: string) {
+    const { data, error } = await supabase
+      .from("income_category")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data || null;
   },
 };

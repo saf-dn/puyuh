@@ -1,11 +1,25 @@
 import { ProductionQueries } from "@/database/queries/production.queries";
-import { getDatabase } from "@/database/db";
-import { DailyProduction } from "@/types";
+import { TransactionQueries } from "@/database/queries/transaction.queries";
+import { DailyProduction, TransactionType } from "@/types";
+import { getDateRange, storeError } from "@/utils/format";
 import { create } from "zustand";
+
+const PRICE_PER_EGG = 400;
+const EGG_SALES_CATEGORY_ID = "inc_eggs"; // matches seeded income category
 
 interface ProductionStore {
   productions: DailyProduction[];
-  loading: boolean;
+  todayProduction: DailyProduction | null;
+  monthlyStats: {
+    total_eggs_produced: number;
+    total_eggs_broken: number;
+    total_eggs_sold: number;
+    total_eggs_available: number;
+    total_puyuh_died: number;
+    avg_eggs_per_day: number;
+    avg_price_per_egg: number;
+  } | null;
+  isLoading: boolean;
   error: string | null;
   loadProductions: (year: number, month: number) => Promise<void>;
   addProduction: (data: {
@@ -18,60 +32,74 @@ interface ProductionStore {
   clearError: () => void;
 }
 
-function getDateRange(year: number, month: number) {
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
-
-  return {
-    start: start.toISOString().split("T")[0],
-    end: end.toISOString().split("T")[0],
-  };
-}
-
 export const useProductionStore = create<ProductionStore>((set, get) => ({
   productions: [],
-  loading: false,
+  todayProduction: null,
+  monthlyStats: null,
+  isLoading: false,
   error: null,
 
   loadProductions: async (year: number, month: number) => {
     try {
-      set({ loading: true, error: null });
-      const db = await getDatabase();
+      set({ isLoading: true, error: null });
+      const today = new Date().toISOString().split("T")[0];
       const { start, end } = getDateRange(year, month);
-      const data = await ProductionQueries.getRange(db, start, end);
-      set({ productions: data });
-    } catch (err) {
+
+      const [productions, todayProduction, monthlyStats] = await Promise.all([
+        ProductionQueries.getRange(start, end),
+        ProductionQueries.getByDate(today),
+        ProductionQueries.getMonthlyStats(year, month),
+      ]);
+
       set({
-        error: `Failed to load productions: ${err instanceof Error ? err.message : "Unknown error"}`,
+        productions,
+        todayProduction,
+        monthlyStats,
+        isLoading: false,
       });
-    } finally {
-      set({ loading: false });
+    } catch (error) {
+      set({
+        error: storeError(error, "Gagal memuat data produksi"),
+        isLoading: false,
+      });
     }
   },
 
   addProduction: async (data) => {
     try {
-      set({ loading: true, error: null });
-      const db = await getDatabase();
+      set({ isLoading: true, error: null });
       const today = new Date();
-      await ProductionQueries.create(db, {
-        date: today.toISOString().split("T")[0],
+      const date = today.toISOString().split("T")[0];
+
+      // Save production data
+      await ProductionQueries.create({
+        date,
         eggs_produced_count: data.eggsProduced,
         eggs_broken_count: data.eggsBroken,
         eggs_sold_count: data.eggsSold,
         puyuh_died_count: data.puyuhDied,
-        price_per_egg: data.pricePerEgg,
+        price_per_egg: PRICE_PER_EGG,
       });
-      // Reload productions for the current month
+
+      // Auto-create income transaction if eggs were sold
+      if (data.eggsSold > 0) {
+        const totalRevenue = data.eggsSold * PRICE_PER_EGG;
+        await TransactionQueries.create({
+          date,
+          transaction_type: TransactionType.INCOME,
+          category_id: EGG_SALES_CATEGORY_ID,
+          amount: totalRevenue,
+          description: `Penjualan ${data.eggsSold} telur @ ${PRICE_PER_EGG}/pcs`,
+        });
+      }
+
       const year = today.getFullYear();
       const month = today.getMonth() + 1;
       await get().loadProductions(year, month);
-    } catch (err) {
-      set({
-        error: `Failed to add production: ${err instanceof Error ? err.message : "Unknown error"}`,
-      });
-    } finally {
-      set({ loading: false });
+    } catch (error) {
+      const message = storeError(error, "Gagal mencatat produksi");
+      set({ error: message, isLoading: false });
+      throw new Error(message);
     }
   },
 

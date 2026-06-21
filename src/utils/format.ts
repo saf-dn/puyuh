@@ -1,21 +1,41 @@
-import { v4 as uuid } from "uuid";
-
-export function generateId(): string {
-  return uuid();
-}
+// ─── Date Helpers ────────────────────────────────────────────────
 
 export function getCurrentDate(): string {
-  const today = new Date();
-  return today.toISOString().split("T")[0];
+  return new Date().toISOString().split("T")[0];
 }
 
 export function formatDate(date: string | Date): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
+  return `${day}/${month}/${d.getFullYear()}`;
 }
+
+export function getMonthName(month: number): string {
+  const months = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+  ];
+  return months[month - 1] || "";
+}
+
+export function getMonthYear(year: number, month: number): string {
+  return `${getMonthName(month)} ${year}`;
+}
+
+/** Returns ISO date strings for the first and last day of the month. */
+export function getDateRange(year: number, month: number) {
+  return {
+    start: new Date(year, month - 1, 1).toISOString().split("T")[0],
+    end: new Date(year, month, 0).toISOString().split("T")[0],
+  };
+}
+
+export function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+// ─── Number / Currency Helpers ───────────────────────────────────
 
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -29,51 +49,9 @@ export function formatNumber(num: number): string {
   return new Intl.NumberFormat("id-ID").format(num);
 }
 
-export function getMonthName(month: number): string {
-  const months = [
-    "Januari",
-    "Februari",
-    "Maret",
-    "April",
-    "Mei",
-    "Juni",
-    "Juli",
-    "Agustus",
-    "September",
-    "Oktober",
-    "November",
-    "Desember",
-  ];
-  return months[month - 1] || "";
-}
+// ─── Store Helpers ───────────────────────────────────────────────
 
-export function getMonthYear(year: number, month: number): string {
-  return `${getMonthName(month)} ${year}`;
-}
-
-export function getDateRange(year: number, month: number) {
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
-
-  return {
-    start: start.toISOString().split("T")[0],
-    end: end.toISOString().split("T")[0],
-  };
-}
-
-export function parseDate(dateString: string): Date {
-  return new Date(dateString);
-}
-
-export function getDaysInMonth(year: number, month: number): number {
-  return new Date(year, month, 0).getDate();
-}
-
-export function calculateMonthlyAverage(
-  total: number,
-  year: number,
-  month: number,
-): number {
-  const days = getDaysInMonth(year, month);
-  return Math.round(total / days);
+/** Extracts a human-readable message from any thrown value. */
+export function storeError(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
 }

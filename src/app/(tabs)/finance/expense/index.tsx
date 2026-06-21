@@ -1,25 +1,28 @@
-import { DarkTheme, DefaultTheme } from "expo-router";
+import { C, S } from "@/constants/theme";
+import { useFinanceStore } from "@/stores/financeStore";
+import { formatCurrency } from "@/utils/format";
+import { useEffect } from "react";
 import {
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
   ActivityIndicator,
   Alert,
+  FlatList,
+  Pressable,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { useEffect } from "react";
-import { useFinanceStore } from "@/stores/financeStore";
-import { formatCurrency } from "@/utils/formatters";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 export default function ExpenseListScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const colors = isDark ? DarkTheme.colors : DefaultTheme.colors;
-
-  const { expenseTransactions, loading, error, loadFinanceData, deleteTransaction } =
-    useFinanceStore();
+  const {
+    expenseTransactions,
+    isLoading,
+    error,
+    loadFinanceData,
+    deleteTransaction,
+  } = useFinanceStore();
 
   useEffect(() => {
     const now = new Date();
@@ -29,136 +32,148 @@ export default function ExpenseListScreen() {
   const handleDelete = (id: string, category: string, amount: number) => {
     Alert.alert(
       "Hapus Pengeluaran",
-      `Hapus pengeluaran ${category} sebesar ${formatCurrency(amount)}?`,
+      `Hapus pengeluaran "${category}" sebesar ${formatCurrency(amount)}?`,
       [
-        { text: "Batal", onPress: () => {}, style: "cancel" },
+        { text: "Batal", style: "cancel" },
         {
           text: "Hapus",
-          onPress: () => {
-            deleteTransaction(id);
-          },
+          onPress: () => deleteTransaction(id),
           style: "destructive",
         },
-      ]
+      ],
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {loading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
+    <SafeAreaView style={es.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+
+      {/* Header - Transparent */}
+      <Animated.View entering={FadeInDown.duration(400).delay(100)} style={es.header}>
+        <Text style={es.headerSub}>Riwayat</Text>
+        <Text style={es.headerTitle}>Pengeluaran</Text>
+      </Animated.View>
+
+      {isLoading ? (
+        <View style={es.center}>
+          <ActivityIndicator size="large" color={C.red} />
         </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
+          entering={FadeInDown.duration(400).delay(200)}
           data={expenseTransactions}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+          contentContainerStyle={es.listContent}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item, index }) => (
             <Pressable
-              style={[styles.transactionItem, { backgroundColor: colors.card }]}
               onLongPress={() =>
-                handleDelete(item.id, item.category, item.amount)
+                handleDelete(
+                  item.id,
+                  item.category?.name ?? "Lainnya",
+                  item.amount,
+                )
               }
             >
-              <View style={styles.itemContent}>
-                <Text style={[styles.itemLabel, { color: colors.text }]}>
-                  {item.category}
-                </Text>
-                <Text style={styles.itemDate}>
-                  {new Date(item.date).toLocaleDateString("id-ID", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </Text>
-                {item.notes && (
-                  <Text style={styles.itemNotes} numberOfLines={1}>
-                    {item.notes}
+              <Animated.View
+                entering={FadeInDown.duration(400).delay(200 + index * 50)}
+                style={es.item}
+              >
+                <View style={[es.itemIconBox, { backgroundColor: `${C.expense}20` }]}>
+                  <Text style={es.itemIcon}>⬆</Text>
+                </View>
+                <View style={es.itemBody}>
+                  <Text style={es.itemCategory}>
+                    {item.category?.name ?? "Lainnya"}
                   </Text>
-                )}
-              </View>
-              <Text style={[styles.itemAmount, { color: "#C62828" }]}>
-                -{formatCurrency(item.amount)}
-              </Text>
+                  {item.description ? (
+                    <Text style={es.itemDesc} numberOfLines={1}>
+                      {item.description}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={[es.itemAmount, { color: C.expense }]}>
+                    -{formatCurrency(item.amount)}
+                  </Text>
+                  <Text style={es.itemDate}>
+                    {new Date(item.date.replace(/-/g, "/")).toLocaleDateString(
+                      "id-ID",
+                      {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      },
+                    )}
+                  </Text>
+                </View>
+              </Animated.View>
             </Pressable>
           )}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: colors.text }]}>
-                Belum ada pengeluaran
-              </Text>
+            <View style={es.empty}>
+              <Text style={es.emptyIcon}>📤</Text>
+              <Text style={es.emptyText}>Belum ada pengeluaran</Text>
+              <Text style={es.emptyHint}>Tambahkan dari tab Keuangan</Text>
             </View>
           }
-          contentContainerStyle={styles.listContent}
         />
       )}
-      {error && (
-        <View style={[styles.errorBar, { backgroundColor: "#C62828" }]}>
-          <Text style={styles.errorText}>{error}</Text>
+
+      {error ? (
+        <View style={es.errorBar}>
+          <Text style={es.errorText}>{error}</Text>
         </View>
-      )}
-    </View>
+      ) : null}
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+const es = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.bg },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+  // Header
+  header: { paddingHorizontal: S.lg, paddingTop: S.md, paddingBottom: S.sm },
+  headerSub: { color: C.textSecondary, fontSize: 13, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1 },
+  headerTitle: {
+    color: C.textPrimary,
+    fontSize: 28,
+    fontWeight: "900",
+    marginTop: 4,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  listContent: {
-    padding: 16,
-    gap: 12,
-    flexGrow: 1,
-  },
-  transactionItem: {
+
+  listContent: { padding: S.lg, gap: 16, flexGrow: 1, paddingBottom: 100 },
+
+  // Item - Borderless
+  item: {
+    backgroundColor: C.card,
+    borderRadius: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: 12,
-    borderRadius: 8,
+    padding: 16,
+    gap: 16,
   },
-  itemContent: {
-    flex: 1,
-  },
-  itemLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  itemDate: {
-    fontSize: 12,
-    opacity: 0.6,
-  },
-  itemNotes: {
-    fontSize: 11,
-    opacity: 0.5,
-    marginTop: 2,
-  },
-  itemAmount: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  emptyContainer: {
+  itemIconBox: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  itemIcon: { fontSize: 18 },
+  itemBody: { flex: 1, gap: 4 },
+  itemCategory: { color: C.textPrimary, fontSize: 16, fontWeight: "700" },
+  itemDesc: { color: C.textSecondary, fontSize: 13 },
+  itemDate: { color: C.textMuted, fontSize: 12, marginTop: 4 },
+  itemAmount: { fontSize: 16, fontWeight: "800" },
+
+  // Empty
+  empty: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 60,
+    gap: 12,
   },
-  emptyText: {
-    fontSize: 14,
-    opacity: 0.6,
-  },
-  errorBar: {
-    padding: 12,
-    alignItems: "center",
-  },
-  errorText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  emptyIcon: { fontSize: 48 },
+  emptyText: { color: C.textPrimary, fontSize: 16, fontWeight: "700" },
+  emptyHint: { color: C.textSecondary, fontSize: 14 },
+
+  errorBar: { backgroundColor: "#7F1D1D", padding: 16, alignItems: "center", margin: S.lg, borderRadius: 16 },
+  errorText: { color: "#FCA5A5", fontSize: 14, fontWeight: "700" },
 });

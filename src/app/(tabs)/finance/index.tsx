@@ -1,16 +1,146 @@
-import { useColorScheme, View, ScrollView, StyleSheet, Text, Pressable, ActivityIndicator } from "react-native";
-import { DarkTheme, DefaultTheme } from "expo-router";
-import { useEffect, useState } from "react";
-import { useFinanceStore } from "@/stores/financeStore";
 import { TransactionForm } from "@/components/forms/TransactionForm";
+import { C, R, S } from "@/constants/theme";
+import { useFinanceStore } from "@/stores/financeStore";
 import { TransactionType } from "@/types";
 import { formatCurrency, getMonthYear } from "@/utils/format";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+
+// ─── Sub-components ──────────────────────────────────────────────
+
+function Header({
+  year,
+  month,
+  onPrev,
+  onNext,
+}: {
+  year: number;
+  month: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <View style={s.header}>
+      <View>
+        <Text style={s.headerSub}>Periode Keuangan</Text>
+        <Text style={s.headerTitle}>{getMonthYear(year, month)}</Text>
+      </View>
+      <View style={s.monthNav}>
+        <Pressable style={s.navBtn} onPress={onPrev}>
+          <Text style={s.navBtnText}>‹</Text>
+        </Pressable>
+        <Pressable style={s.navBtn} onPress={onNext}>
+          <Text style={s.navBtnText}>›</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function SummaryCard({
+  label,
+  amount,
+  color,
+  accent,
+}: {
+  label: string;
+  amount: number;
+  color: string;
+  accent?: boolean;
+}) {
+  return (
+    <View style={[s.summaryCard, accent && { backgroundColor: color }]}>
+      <Text
+        style={[s.summaryLabel, accent && { color: "rgba(255,255,255,0.7)" }]}
+      >
+        {label}
+      </Text>
+      <Text style={[s.summaryAmount, { color: accent ? C.white : color }]}>
+        {formatCurrency(amount)}
+      </Text>
+    </View>
+  );
+}
+
+function ActionButton({
+  label,
+  color,
+  onPress,
+  icon,
+}: {
+  label: string;
+  color: string;
+  onPress: () => void;
+  icon: string;
+}) {
+  return (
+    <Pressable
+      style={[s.actionBtn, { backgroundColor: color }]}
+      onPress={onPress}
+    >
+      <Text style={s.actionBtnIcon}>{icon}</Text>
+      <Text style={s.actionBtnText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function TransactionRow({
+  type,
+  category,
+  date,
+  amount,
+  description,
+}: {
+  type: TransactionType;
+  category?: string;
+  date: string;
+  amount: number;
+  description?: string;
+}) {
+  const isIncome = type === TransactionType.INCOME;
+  return (
+    <View style={s.txRow}>
+      <View
+        style={[s.txIconBox, { backgroundColor: isIncome ? `${C.income}20` : `${C.expense}20` }]}
+      >
+        <Text style={s.txIcon}>{isIncome ? "⬇" : "⬆"}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={s.txCategory} numberOfLines={1}>
+          {category ?? "Lainnya"}
+        </Text>
+        {description ? (
+          <Text style={s.txDesc} numberOfLines={1}>
+            {description}
+          </Text>
+        ) : null}
+      </View>
+      <View style={{ alignItems: "flex-right" }}>
+        <Text style={[s.txAmount, { color: isIncome ? C.income : C.expense }]}>
+          {isIncome ? "+" : "-"}
+          {formatCurrency(amount)}
+        </Text>
+        <Text style={s.txDate}>{date}</Text>
+      </View>
+    </View>
+  );
+}
+
+// ─── Screen ──────────────────────────────────────────────────────
 
 export default function FinanceScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const colors = isDark ? DarkTheme.colors : DefaultTheme.colors;
-
+  const router = useRouter();
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
 
@@ -21,137 +151,156 @@ export default function FinanceScreen() {
     expenseCategories,
     currentMonth,
     isLoading,
+    error,
     loadFinanceData,
     loadCategories,
     addTransaction,
+    setMonth,
+    clearError,
   } = useFinanceStore();
 
   useEffect(() => {
     loadCategories();
+  }, []);
+
+  useEffect(() => {
     loadFinanceData(currentMonth.year, currentMonth.month);
-  }, [currentMonth.month, currentMonth.year, loadCategories, loadFinanceData]);
+  }, [currentMonth.year, currentMonth.month]);
 
   const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
   const profit = totalIncome - totalExpense;
 
-  const recentTransactions = [
-    ...incomeTransactions.slice(0, 3),
-    ...expenseTransactions.slice(0, 2),
-  ]
+  const recentTransactions = [...incomeTransactions, ...expenseTransactions]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
+    .slice(0, 8);
+
+  const changeMonth = (delta: number) => {
+    let m = currentMonth.month + delta;
+    let y = currentMonth.year;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    } else if (m < 1) {
+      m = 12;
+      y -= 1;
+    }
+    setMonth(y, m);
+  };
 
   return (
-    <>
+    <SafeAreaView style={s.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={s.scroll}
+        contentContainerStyle={s.content}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
-          <Text style={[styles.monthTitle, { color: colors.text }]}>
-            {getMonthYear(currentMonth.year, currentMonth.month)}
+        <Animated.View entering={FadeInDown.duration(400).delay(100)}>
+          <Header
+            year={currentMonth.year}
+            month={currentMonth.month}
+            onPrev={() => changeMonth(-1)}
+            onNext={() => changeMonth(1)}
+          />
+        </Animated.View>
+
+        {/* Profit Hero - Borderless & Soft Gradient-like Background */}
+        <Animated.View entering={FadeInDown.duration(400).delay(200)} style={s.heroCard}>
+          <Text style={s.heroLabel}>Saldo Bersih Bulan Ini</Text>
+          <Text
+            style={[
+              s.heroAmount,
+              { color: profit >= 0 ? C.income : C.expense },
+            ]}
+          >
+            {profit >= 0 ? "+" : ""}
+            {formatCurrency(profit)}
           </Text>
+        </Animated.View>
 
-          {/* Summary Cards */}
-          <View style={styles.cardsContainer}>
-            <View style={[styles.card, { backgroundColor: "#E8F5E9" }]}>
-              <Text style={styles.cardLabel}>Total Pendapatan</Text>
-              <Text style={[styles.cardValue, { color: "#2E7D32" }]}>
-                {formatCurrency(totalIncome)}
-              </Text>
-            </View>
+        {/* Summary Cards Row - Varying sizes and borderless */}
+        <Animated.View entering={FadeInDown.duration(400).delay(300)} style={s.summaryRow}>
+          <SummaryCard
+            label="Total Pendapatan"
+            amount={totalIncome}
+            color={C.income}
+          />
+          <SummaryCard
+            label="Total Pengeluaran"
+            amount={totalExpense}
+            color={C.expense}
+            accent
+          />
+        </Animated.View>
 
-            <View style={[styles.card, { backgroundColor: "#FFEBEE" }]}>
-              <Text style={styles.cardLabel}>Total Pengeluaran</Text>
-              <Text style={[styles.cardValue, { color: "#C62828" }]}>
-                {formatCurrency(totalExpense)}
-              </Text>
-            </View>
+        {/* Action Buttons - Transparent container, solid buttons */}
+        <Animated.View entering={FadeInDown.duration(400).delay(400)} style={s.actionRow}>
+          <ActionButton
+            label="Pendapatan"
+            icon="📥"
+            color={C.income}
+            onPress={() => setShowIncomeForm(true)}
+          />
+          <ActionButton
+            label="Pengeluaran"
+            icon="📤"
+            color={C.expense}
+            onPress={() => setShowExpenseForm(true)}
+          />
+        </Animated.View>
 
-            <View style={[styles.card, { backgroundColor: "#E3F2FD" }]}>
-              <Text style={[styles.cardLabel, { color: colors.text }]}>
-                Profit/Loss
-              </Text>
-              <Text
-                style={[
-                  styles.cardValue,
-                  { color: profit >= 0 ? "#2E7D32" : "#C62828" },
-                ]}
-              >
-                {profit >= 0 ? "+" : ""}
-                {formatCurrency(profit)}
-              </Text>
-            </View>
-          </View>
+        {/* Divider - Transparent container */}
+        <Animated.View entering={FadeInDown.duration(400).delay(500)} style={s.sectionHeader}>
+          <Text style={s.sectionTitle}>Transaksi Terbaru</Text>
+        </Animated.View>
 
-          {/* Action Buttons */}
-          <View style={styles.buttonsContainer}>
-            <Pressable
-              style={[styles.button, { backgroundColor: colors.tint }]}
-              onPress={() => setShowIncomeForm(true)}
-            >
-              <Text style={styles.buttonText}>+ Pendapatan</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.button, { backgroundColor: colors.tint }]}
-              onPress={() => setShowExpenseForm(true)}
-            >
-              <Text style={styles.buttonText}>+ Pengeluaran</Text>
-            </Pressable>
-          </View>
-
-          {/* Recent Transactions */}
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Transaksi Terbaru
-          </Text>
+        {/* Transaction List - Borderless container */}
+        <Animated.View entering={FadeInDown.duration(400).delay(600)}>
           {isLoading ? (
-            <ActivityIndicator size="large" color={colors.tint} />
+            <ActivityIndicator color={C.red} style={{ marginVertical: 24 }} />
           ) : recentTransactions.length > 0 ? (
-            <View
-              style={[styles.transactionList, { backgroundColor: colors.card }]}
-            >
-              {recentTransactions.map((transaction) => (
-                <View key={transaction.id} style={styles.transactionItem}>
-                  <View style={styles.transactionInfo}>
-                    <Text
-                      style={[styles.transactionLabel, { color: colors.text }]}
-                    >
-                      {transaction.category?.name || "Lainnya"}
-                    </Text>
-                    <Text style={styles.transactionDate}>
-                      {transaction.date}
-                    </Text>
-                  </View>
-                  <Text
-                    style={[
-                      styles.transactionAmount,
-                      {
-                        color:
-                          transaction.transaction_type === TransactionType.INCOME
-                            ? "#2E7D32"
-                            : "#C62828",
-                      },
-                    ]}
-                  >
-                    {transaction.transaction_type === TransactionType.INCOME
-                      ? "+"
-                      : "-"}
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                </View>
+            <View style={s.txList}>
+              {recentTransactions.map((t, index) => (
+                <TransactionRow
+                  key={`${t.id}-${index}`}
+                  type={t.transaction_type}
+                  category={t.category?.name}
+                  date={t.date}
+                  amount={t.amount}
+                  description={t.description}
+                />
               ))}
             </View>
           ) : (
-            <View
-              style={[styles.transactionList, { backgroundColor: colors.card }]}
-            >
-              <Text style={[styles.emptyText, { color: colors.text }]}>
-                Belum ada transaksi
-              </Text>
+            <View style={s.emptyBox}>
+              <Text style={s.emptyIcon}>💸</Text>
+              <Text style={s.emptyText}>Belum ada transaksi bulan ini</Text>
             </View>
           )}
-        </View>
+        </Animated.View>
+
+        {/* Quick Links - Subtle background, no border */}
+        <Animated.View entering={FadeInDown.duration(400).delay(700)} style={s.linkRow}>
+          <Pressable
+            style={s.linkBtn}
+            onPress={() => router.push("/finance/income")}
+          >
+            <Text style={s.linkBtnText}>Lihat Semua Pendapatan →</Text>
+          </Pressable>
+          <Pressable
+            style={s.linkBtn}
+            onPress={() => router.push("/finance/expense")}
+          >
+            <Text style={s.linkBtnText}>Lihat Semua Pengeluaran →</Text>
+          </Pressable>
+        </Animated.View>
+
+        {error ? (
+          <Pressable style={s.errorBar} onPress={clearError}>
+            <Text style={s.errorText}>⚠ {error}</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       {/* Forms */}
@@ -163,7 +312,6 @@ export default function FinanceScreen() {
         onClose={() => setShowIncomeForm(false)}
         isLoading={isLoading}
       />
-
       <TransactionForm
         visible={showExpenseForm}
         type={TransactionType.EXPENSE}
@@ -172,91 +320,148 @@ export default function FinanceScreen() {
         onClose={() => setShowExpenseForm(false)}
         isLoading={isLoading}
       />
-    </>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    gap: 20,
-  },
-  monthTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  cardsContainer: {
-    gap: 12,
-  },
-  card: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  cardLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginBottom: 4,
-    opacity: 0.7,
-  },
-  cardValue: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  buttonsContainer: {
-    gap: 10,
-  },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "600",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginTop: 8,
-  },
-  transactionList: {
-    borderRadius: 8,
-    padding: 12,
-    minHeight: 100,
-    gap: 8,
-  },
-  transactionItem: {
+// ─── Styles ──────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.bg },
+  scroll: { flex: 1 },
+  content: { padding: S.lg, paddingBottom: S.xl, gap: 24 },
+
+  // Header - Transparent
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#00000010",
+    paddingTop: S.sm,
   },
-  transactionInfo: {
-    flex: 1,
+  headerSub: { color: C.textSecondary, fontSize: 13, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 },
+  headerTitle: {
+    color: C.textPrimary,
+    fontSize: 28,
+    fontWeight: "900",
+    marginTop: 4,
   },
-  transactionLabel: {
+  monthNav: { flexDirection: "row", gap: 8 },
+  navBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.card2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navBtnText: { color: C.textPrimary, fontSize: 22, lineHeight: 26 },
+
+  // Hero - Borderless, Soft padding
+  heroCard: {
+    backgroundColor: C.card,
+    borderRadius: 24,
+    padding: 28,
+    alignItems: "center",
+  },
+  heroLabel: {
+    color: C.textSecondary,
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 2,
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
-  transactionDate: {
+  heroAmount: { fontSize: 40, fontWeight: "900", letterSpacing: -1.5 },
+
+  // Summary cards - Asymmetric sizing
+  summaryRow: { flexDirection: "row", gap: 16 },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: C.card,
+    borderRadius: 20,
+    padding: 20,
+    gap: 8,
+  },
+  summaryLabel: {
+    color: C.textSecondary,
     fontSize: 12,
-    opacity: 0.6,
-  },
-  transactionAmount: {
-    fontSize: 14,
     fontWeight: "700",
-    marginLeft: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  emptyText: {
-    textAlign: "center",
-    opacity: 0.6,
+  summaryAmount: { fontSize: 18, fontWeight: "900" },
+
+  // Action buttons
+  actionRow: { flexDirection: "row", gap: 16 },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 20,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
   },
+  actionBtnIcon: { fontSize: 18 },
+  actionBtnText: { color: C.white, fontWeight: "800", fontSize: 15 },
+
+  // Section header - Transparent
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  sectionTitle: { color: C.textPrimary, fontSize: 20, fontWeight: "800" },
+
+  // Transaction list - Borderless items
+  txList: {
+    gap: 16,
+  },
+  txRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    backgroundColor: C.card,
+    padding: 16,
+    borderRadius: 20,
+  },
+  txIconBox: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  txIcon: { fontSize: 18 },
+  txCategory: { color: C.textPrimary, fontSize: 16, fontWeight: "700" },
+  txDesc: { color: C.textSecondary, fontSize: 13, marginTop: 4 },
+  txDate: { color: C.textMuted, fontSize: 12, marginTop: 4, textAlign: "right" },
+  txAmount: { fontSize: 16, fontWeight: "800", textAlign: "right" },
+
+  // Quick links
+  linkRow: { gap: 12, marginTop: 8 },
+  linkBtn: {
+    backgroundColor: C.card2,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  linkBtnText: { color: C.textPrimary, fontSize: 14, fontWeight: "700" },
+
+  // Empty state
+  emptyBox: {
+    backgroundColor: C.card,
+    borderRadius: 24,
+    padding: 40,
+    alignItems: "center",
+    gap: 12,
+  },
+  emptyIcon: { fontSize: 48 },
+  emptyText: { color: C.textSecondary, fontSize: 14, fontWeight: "600" },
+
+  // Error
+  errorBar: {
+    backgroundColor: "#7F1D1D",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+  },
+  errorText: { color: "#FCA5A5", fontSize: 14, fontWeight: "700" },
 });

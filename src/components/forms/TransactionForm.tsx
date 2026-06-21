@@ -1,3 +1,4 @@
+import { fadedColor } from "@/constants/theme";
 import {
     ExpenseCategory,
     IncomeCategory,
@@ -45,6 +46,14 @@ export function TransactionForm({
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  const resetForm = () => {
+    setDate(getCurrentDate());
+    setSelectedCategory(null);
+    setAmount("");
+    setDescription("");
+    setErrors({});
+  };
+
   const handleSubmit = async () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -68,11 +77,7 @@ export function TransactionForm({
       });
 
       // Reset form
-      setDate(getCurrentDate());
-      setSelectedCategory(null);
-      setAmount("");
-      setDescription("");
-      setErrors({});
+      resetForm();
       onClose();
     } catch (error) {
       setErrors({
@@ -91,7 +96,9 @@ export function TransactionForm({
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.card }]}>
           <Pressable onPress={onClose}>
-            <Text style={[styles.closeButton, { color: colors.tint }]}>✕</Text>
+            <Text style={[styles.closeButton, { color: colors.primary }]}>
+              ✕
+            </Text>
           </Pressable>
           <Text style={[styles.title, { color: colors.text }]}>
             {type === TransactionType.INCOME
@@ -102,7 +109,7 @@ export function TransactionForm({
             <Text
               style={[
                 styles.saveButton,
-                { color: colors.tint, opacity: isLoading ? 0.5 : 1 },
+                { color: colors.primary, opacity: isLoading ? 0.5 : 1 },
               ]}
             >
               {isLoading ? "..." : "Simpan"}
@@ -120,7 +127,7 @@ export function TransactionForm({
                 { color: colors.text, borderColor: colors.card },
               ]}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.text + "80"}
+              placeholderTextColor={fadedColor(colors.text)}
               value={date}
               onChangeText={setDate}
             />
@@ -137,9 +144,13 @@ export function TransactionForm({
                     styles.categoryBtn,
                     {
                       backgroundColor:
-                        selectedCategory === cat.id ? colors.tint : colors.card,
+                        selectedCategory === cat.id
+                          ? colors.primary
+                          : colors.card,
                       borderColor:
-                        selectedCategory === cat.id ? colors.tint : colors.card,
+                        selectedCategory === cat.id
+                          ? colors.primary
+                          : colors.card,
                     },
                   ]}
                   onPress={() => {
@@ -180,7 +191,7 @@ export function TransactionForm({
                 },
               ]}
               placeholder="0"
-              placeholderTextColor={colors.text + "80"}
+              placeholderTextColor={fadedColor(colors.text)}
               keyboardType="number-pad"
               value={amount}
               onChangeText={(text) => {
@@ -191,7 +202,7 @@ export function TransactionForm({
               }}
             />
             {amount && (
-              <Text style={[styles.amountDisplay, { color: colors.tint }]}>
+              <Text style={[styles.amountDisplay, { color: colors.primary }]}>
                 {formatCurrency(parseFloat(amount) || 0)}
               </Text>
             )}
@@ -211,13 +222,22 @@ export function TransactionForm({
                 { color: colors.text, borderColor: colors.card },
               ]}
               placeholder="Tambahkan catatan..."
-              placeholderTextColor={colors.text + "80"}
+              placeholderTextColor={fadedColor(colors.text)}
               value={description}
               onChangeText={setDescription}
               multiline
               numberOfLines={3}
             />
           </View>
+
+          {/* Reset Button */}
+          <Pressable
+            style={styles.resetBtn}
+            onPress={resetForm}
+            disabled={isLoading}
+          >
+            <Text style={styles.resetBtnText}>🔄 Reset Form</Text>
+          </Pressable>
 
           {errors.submit && (
             <Text style={[styles.errorText, { marginHorizontal: 16 }]}>
@@ -302,5 +322,19 @@ const styles = StyleSheet.create({
     color: "#ff6b6b",
     fontSize: 12,
     marginTop: 4,
+  },
+  resetBtn: {
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center" as const,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    marginTop: 8,
+  },
+  resetBtnText: {
+    color: "#9E9E9E",
+    fontSize: 14,
+    fontWeight: "600" as const,
   },
 });

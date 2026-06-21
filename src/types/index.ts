@@ -163,6 +163,7 @@ export interface MonthlySummary {
   eggs_sold: number;
   eggs_available: number;
   avg_eggs_per_day: number;
+  avg_price_per_egg: number;
   // Feed
   total_feed_cost: number;
   total_feed_kg: number;

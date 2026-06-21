@@ -1,65 +1,46 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+/** ─── Design Tokens ─────────────────────────────────────────── */
+export const C = {
+  // Backgrounds
+  bg:      '#0F0F0F',   // page background
+  card:    '#1A1A1A',   // card surface
+  card2:   '#222222',   // elevated card / inner card
+  border:  '#2A2A2A',   // subtle dividers
 
-import '@/global.css';
+  // Accent
+  red:     '#E53935',   // primary CTA / active
+  redDim:  '#3D1A1A',   // red with low opacity bg
+  redSoft: 'rgba(229,57,53,0.15)',
 
-import { Platform } from 'react-native';
+  // Text
+  textPrimary:   '#FFFFFF',
+  textSecondary: '#9E9E9E',
+  textMuted:     '#555555',
 
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+  // Status
+  income:  '#22C55E',   // green for positive values
+  expense: '#EF4444',   // red for expenses
+
+  // Misc
+  white: '#FFFFFF',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
-
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
-
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+export const R = {
+  sm:  10,
+  md:  14,
+  lg:  20,
+  xl:  28,
+  pill: 999,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const S = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+} as const;
+
+/** Returns hex color with appended alpha. Used by form placeholders. */
+export function fadedColor(color: string | symbol, alpha = '80'): string {
+  return `${String(color)}${alpha}`;
+}

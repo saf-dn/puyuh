@@ -1,14 +1,7 @@
-import { getDatabase } from "@/database/db";
-import {
-    FeedTypeQueries
-} from "@/database/queries/feed.queries";
+import { FeedTypeQueries } from "@/database/queries/feed.queries";
 import { PuyuhQueries } from "@/database/queries/puyuh.queries";
-import {
-    FeedType,
-    FeedTypeInput,
-    Puyuh,
-    PuyuhInput
-} from "@/types";
+import { FeedType, FeedTypeInput, Puyuh, PuyuhInput } from "@/types";
+import { storeError } from "@/utils/format";
 import { create } from "zustand";
 
 interface PuyuhState {
@@ -37,90 +30,70 @@ export const usePuyuhStore = create<PuyuhState>((set, get) => ({
   loadPuyuh: async () => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      const puyuhs = await PuyuhQueries.getAll(db);
-      const total = await PuyuhQueries.getTotalCount(db);
-
-      set({
-        puyuhGroups: puyuhs,
-        totalPuyuh: total,
-        isLoading: false,
-      });
+      const [puyuhs, total] = await Promise.all([
+        PuyuhQueries.getAll(),
+        PuyuhQueries.getTotalCount(),
+      ]);
+      set({ puyuhGroups: puyuhs, totalPuyuh: total, isLoading: false });
     } catch (error) {
-      set({
-        error:
-          error instanceof Error ? error.message : "Failed to load puyuh data",
-        isLoading: false,
-      });
+      set({ error: storeError(error, "Gagal memuat data puyuh"), isLoading: false });
     }
   },
 
   loadFeedTypes: async () => {
     try {
-      const db = await getDatabase();
-      const types = await FeedTypeQueries.getAll(db);
+      const types = await FeedTypeQueries.getAll();
       set({ feedTypes: types });
     } catch (error) {
       console.error("Failed to load feed types:", error);
     }
   },
 
-  addPuyuh: async (input: PuyuhInput) => {
+  addPuyuh: async (input) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      await PuyuhQueries.create(db, input);
+      await PuyuhQueries.create(input);
       await get().loadPuyuh();
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to add puyuh",
-        isLoading: false,
-      });
+      const msg = storeError(error, "Gagal menambah puyuh");
+      set({ error: msg, isLoading: false });
+      throw new Error(msg);
     }
   },
 
-  updatePuyuh: async (id: string, input: Partial<PuyuhInput>) => {
+  updatePuyuh: async (id, input) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      await PuyuhQueries.update(db, id, input);
+      await PuyuhQueries.update(id, input);
       await get().loadPuyuh();
     } catch (error) {
-      set({
-        error:
-          error instanceof Error ? error.message : "Failed to update puyuh",
-        isLoading: false,
-      });
+      const msg = storeError(error, "Gagal memperbarui puyuh");
+      set({ error: msg, isLoading: false });
+      throw new Error(msg);
     }
   },
 
-  deletePuyuh: async (id: string) => {
+  deletePuyuh: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      await PuyuhQueries.delete(db, id);
+      await PuyuhQueries.delete(id);
       await get().loadPuyuh();
     } catch (error) {
-      set({
-        error:
-          error instanceof Error ? error.message : "Failed to delete puyuh",
-        isLoading: false,
-      });
+      const msg = storeError(error, "Gagal menghapus puyuh");
+      set({ error: msg, isLoading: false });
+      throw new Error(msg);
     }
   },
 
-  addFeedType: async (input: FeedTypeInput) => {
+  addFeedType: async (input) => {
     set({ isLoading: true, error: null });
     try {
-      const db = await getDatabase();
-      await FeedTypeQueries.create(db, input);
+      await FeedTypeQueries.create(input);
       await get().loadFeedTypes();
     } catch (error) {
-      set({
-        error:
-          error instanceof Error ? error.message : "Failed to add feed type",
-        isLoading: false,
-      });
+      const msg = storeError(error, "Gagal menambah jenis pakan");
+      set({ error: msg, isLoading: false });
+      throw new Error(msg);
     }
   },
 

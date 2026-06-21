@@ -1,3 +1,4 @@
+import { fadedColor } from "@/constants/theme";
 import { formatCurrency } from "@/utils/format";
 import { DarkTheme, DefaultTheme } from "expo-router";
 import { useState } from "react";
@@ -11,8 +12,10 @@ import {
     Text,
     TextInput,
     useColorScheme,
-    View
+    View,
 } from "react-native";
+
+const PRICE_PER_EGG = 400;
 
 interface ProductionFormProps {
   visible: boolean;
@@ -23,7 +26,7 @@ interface ProductionFormProps {
     eggsSold: number;
     puyuhDied: number;
     pricePerEgg: number;
-  }) => void;
+  }) => Promise<void>;
   loading?: boolean;
 }
 
@@ -42,7 +45,6 @@ export default function ProductionForm({
     eggsBroken: "",
     eggsSold: "",
     puyuhDied: "",
-    pricePerEgg: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -53,7 +55,6 @@ export default function ProductionForm({
       eggsBroken: "",
       eggsSold: "",
       puyuhDied: "",
-      pricePerEgg: "",
     });
     setErrors({});
   };
@@ -97,43 +98,43 @@ export default function ProductionForm({
       newErrors.puyuhDied = "Masukkan angka yang valid (≥ 0)";
     }
 
-    if (!formData.pricePerEgg.trim()) {
-      newErrors.pricePerEgg = "Harga per telur harus diisi";
-    } else if (
-      isNaN(Number(formData.pricePerEgg)) ||
-      Number(formData.pricePerEgg) <= 0
-    ) {
-      newErrors.pricePerEgg = "Masukkan harga yang valid (> 0)";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit({
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await onSubmit({
         eggsProduced: Number(formData.eggsProduced),
         eggsBroken: Number(formData.eggsBroken),
         eggsSold: Number(formData.eggsSold),
         puyuhDied: Number(formData.puyuhDied),
-        pricePerEgg: Number(formData.pricePerEgg),
+        pricePerEgg: PRICE_PER_EGG,
       });
       resetForm();
+      onClose();
+    } catch {
+      // Error handled by parent store
     }
   };
+
+  const eggsAvailable = Math.max(
+    0,
+    (Number(formData.eggsProduced) || 0) -
+      (Number(formData.eggsBroken) || 0) -
+      (Number(formData.eggsSold) || 0),
+  );
+
+  const estimatedRevenue = (Number(formData.eggsSold) || 0) * PRICE_PER_EGG;
 
   const handleClose = () => {
     resetForm();
     onClose();
   };
-
-  const eggsAvailable =
-    (formData.eggsProduced
-      ? Number(formData.eggsProduced) - Number(formData.eggsBroken || 0)
-      : 0) || 0;
-
-  const estimatedRevenue = eggsAvailable * (Number(formData.pricePerEgg) || 0);
 
   return (
     <Modal
@@ -148,14 +149,14 @@ export default function ProductionForm({
       >
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable onPress={handleClose}>
-            <Text style={{ color: colors.tint, fontSize: 16 }}>Batal</Text>
+            <Text style={{ color: colors.primary, fontSize: 16 }}>Batal</Text>
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             Produksi Telur Hari Ini
           </Text>
           <Pressable onPress={handleSubmit} disabled={loading}>
             <Text
-              style={{ color: colors.tint, fontSize: 16, fontWeight: "600" }}
+              style={{ color: colors.primary, fontSize: 16, fontWeight: "600" }}
             >
               {loading ? "Simpan..." : "Simpan"}
             </Text>
@@ -170,6 +171,21 @@ export default function ProductionForm({
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Data Produksi
             </Text>
+
+            {/* Info harga per telur */}
+            <View
+              style={[
+                styles.priceInfoBox,
+                { backgroundColor: "#1B3A1F", borderColor: "#2E7D32" },
+              ]}
+            >
+              <Text style={styles.priceInfoText}>
+                💰 Harga per telur: {formatCurrency(PRICE_PER_EGG)}
+              </Text>
+              <Text style={styles.priceInfoSub}>
+                Pemasukan otomatis tercatat saat telur terjual
+              </Text>
+            </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>
@@ -187,7 +203,7 @@ export default function ProductionForm({
                   },
                 ]}
                 placeholder="Masukkan jumlah telur"
-                placeholderTextColor={colors.text + "80"}
+                placeholderTextColor={fadedColor(colors.text)}
                 keyboardType="decimal-pad"
                 value={formData.eggsProduced}
                 onChangeText={(text) =>
@@ -214,7 +230,7 @@ export default function ProductionForm({
                   },
                 ]}
                 placeholder="Masukkan jumlah telur pecah"
-                placeholderTextColor={colors.text + "80"}
+                placeholderTextColor={fadedColor(colors.text)}
                 keyboardType="decimal-pad"
                 value={formData.eggsBroken}
                 onChangeText={(text) =>
@@ -225,22 +241,6 @@ export default function ProductionForm({
               {errors.eggsBroken && (
                 <Text style={styles.errorText}>{errors.eggsBroken}</Text>
               )}
-            </View>
-
-            <View
-              style={[
-                styles.summaryBox,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: colors.text }]}>
-                  Telur Tersedia:
-                </Text>
-                <Text style={[styles.summaryValue, { color: colors.text }]}>
-                  {Math.max(0, eggsAvailable)} pcs
-                </Text>
-              </View>
             </View>
 
             <View style={styles.inputGroup}>
@@ -257,7 +257,7 @@ export default function ProductionForm({
                   },
                 ]}
                 placeholder="Masukkan jumlah telur terjual"
-                placeholderTextColor={colors.text + "80"}
+                placeholderTextColor={fadedColor(colors.text)}
                 keyboardType="decimal-pad"
                 value={formData.eggsSold}
                 onChangeText={(text) =>
@@ -270,39 +270,6 @@ export default function ProductionForm({
               )}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Harga per Telur (Rp) *
-              </Text>
-              <View style={styles.currencyInput}>
-                <Text style={[styles.currencySymbol, { color: colors.text }]}>
-                  Rp
-                </Text>
-                <TextInput
-                  style={[
-                    styles.inputCurrency,
-                    {
-                      color: colors.text,
-                      borderColor: errors.pricePerEgg
-                        ? "#C62828"
-                        : colors.border,
-                    },
-                  ]}
-                  placeholder="0"
-                  placeholderTextColor={colors.text + "80"}
-                  keyboardType="decimal-pad"
-                  value={formData.pricePerEgg}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, pricePerEgg: text })
-                  }
-                  editable={!loading}
-                />
-              </View>
-              {errors.pricePerEgg && (
-                <Text style={styles.errorText}>{errors.pricePerEgg}</Text>
-              )}
-            </View>
-
             <View
               style={[
                 styles.summaryBox,
@@ -311,12 +278,33 @@ export default function ProductionForm({
             >
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: colors.text }]}>
-                  Perkiraan Pendapatan:
+                  Telur Belum Dijual:
+                </Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>
+                  {eggsAvailable} pcs
+                </Text>
+              </View>
+              <View style={[styles.summaryRow, { marginTop: 8 }]}>
+                <Text style={[styles.summaryLabel, { color: colors.text }]}>
+                  Harga per Telur:
+                </Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>
+                  {formatCurrency(PRICE_PER_EGG)}
+                </Text>
+              </View>
+              <View style={[styles.summaryRow, { marginTop: 8 }]}>
+                <Text style={[styles.summaryLabel, { color: colors.text }]}>
+                  Total Pemasukan:
                 </Text>
                 <Text style={[styles.summaryValue, { color: "#2E7D32" }]}>
                   {formatCurrency(estimatedRevenue)}
                 </Text>
               </View>
+              {Number(formData.eggsSold) > 0 && (
+                <Text style={styles.autoIncomeNote}>
+                  ✅ Pemasukan akan otomatis tercatat di Keuangan
+                </Text>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -333,7 +321,7 @@ export default function ProductionForm({
                   },
                 ]}
                 placeholder="Masukkan jumlah puyuh mati"
-                placeholderTextColor={colors.text + "80"}
+                placeholderTextColor={fadedColor(colors.text)}
                 keyboardType="decimal-pad"
                 value={formData.puyuhDied}
                 onChangeText={(text) =>
@@ -346,6 +334,15 @@ export default function ProductionForm({
               )}
             </View>
           </View>
+
+          {/* Reset Button */}
+          <Pressable
+            style={[styles.resetBtn, { borderColor: colors.border }]}
+            onPress={resetForm}
+            disabled={loading}
+          >
+            <Text style={styles.resetBtnText}>🔄 Reset Form</Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
@@ -395,27 +392,25 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
   },
-  currencyInput: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingLeft: 12,
-  },
-  currencySymbol: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginRight: 8,
-  },
-  inputCurrency: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    fontSize: 14,
-  },
   errorText: {
     color: "#C62828",
     fontSize: 12,
+    fontWeight: "500",
+  },
+  priceInfoBox: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    gap: 4,
+  },
+  priceInfoText: {
+    color: "#4CAF50",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  priceInfoSub: {
+    color: "#81C784",
+    fontSize: 11,
     fontWeight: "500",
   },
   summaryBox: {
@@ -436,5 +431,24 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 14,
     fontWeight: "700",
+  },
+  autoIncomeNote: {
+    color: "#4CAF50",
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 10,
+    textAlign: "center",
+  },
+  resetBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  resetBtnText: {
+    color: "#9E9E9E",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

@@ -1,334 +1,508 @@
-import { useColorScheme, ScrollView, StyleSheet, Text, View, ActivityIndicator } from "react-native";
-import { DarkTheme, DefaultTheme } from "expo-router";
-import { useEffect } from "react";
+import { C, S } from "@/constants/theme";
 import { useSummaryStore } from "@/stores/summaryStore";
 import { formatCurrency, formatNumber, getMonthYear } from "@/utils/format";
+import { useCallback, useEffect } from "react";
+import {
+  ActivityIndicator,
+  ColorValue,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
+// ─── Info Row ────────────────────────────────────────────────────
+function InfoRow({
+  label,
+  value,
+  valueColor,
+  bold,
+}: {
+  label: string;
+  value: string;
+  valueColor?: ColorValue;
+  bold?: boolean;
+}) {
+  return (
+    <View style={ss.infoRow}>
+      <Text
+        style={[
+          ss.infoLabel,
+          bold && { fontWeight: "700", color: C.textPrimary },
+        ]}
+      >
+        {label}
+      </Text>
+      <Text
+        style={[
+          ss.infoValue,
+          valueColor ? { color: valueColor } : {},
+          bold && { fontWeight: "800" },
+        ]}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Section Card ────────────────────────────────────────────────
+function SectionCard({
+  title,
+  accent,
+  children,
+}: {
+  title: string;
+  accent?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={ss.sectionCard}>
+      <View style={ss.sectionCardHeader}>
+        {accent ? (
+          <View style={[ss.sectionAccentDot, { backgroundColor: accent }]} />
+        ) : null}
+        <Text style={ss.sectionCardTitle}>{title}</Text>
+      </View>
+      {children}
+    </View>
+  );
+}
+
+// ─── Metric Big ──────────────────────────────────────────────────
+function MetricBig({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+}) {
+  return (
+    <View style={ss.metricBig}>
+      <Text style={ss.metricBigLabel}>{label}</Text>
+      <Text style={[ss.metricBigValue, color ? { color } : {}]}>{value}</Text>
+    </View>
+  );
+}
+
+// ─── Screen ──────────────────────────────────────────────────────
 export default function SummaryScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const colors = isDark ? DarkTheme.colors : DefaultTheme.colors;
-
   const { monthlySummary, isLoading, loadMonthlySummary } = useSummaryStore();
 
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  const loadData = useCallback(() => {
+    loadMonthlySummary(year, month);
+  }, [loadMonthlySummary, year, month]);
+
   useEffect(() => {
-    const now = new Date();
-    loadMonthlySummary(now.getFullYear(), now.getMonth() + 1);
-  }, [loadMonthlySummary]);
+    loadData();
+  }, [loadData]);
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.tint} />
-      </View>
+      <SafeAreaView style={ss.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color={C.red} />
+          <Text style={{ color: C.textSecondary, marginTop: 12, fontSize: 13 }}>
+            Memuat data...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!monthlySummary) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={[styles.emptyText, { color: colors.text }]}>
-          Tidak ada data tersedia
-        </Text>
-      </View>
+      <SafeAreaView style={ss.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: S.lg,
+          }}
+        >
+          <Text style={{ fontSize: 48, marginBottom: 16 }}>📊</Text>
+          <Text
+            style={{
+              color: C.textPrimary,
+              fontSize: 18,
+              fontWeight: "800",
+              marginBottom: 8,
+            }}
+          >
+            Belum ada data
+          </Text>
+          <Text
+            style={{
+              color: C.textSecondary,
+              fontSize: 14,
+              textAlign: "center",
+              marginBottom: 24,
+            }}
+          >
+            Mulai dengan menambahkan data puyuh dan transaksi
+          </Text>
+          <Pressable style={ss.retryBtn} onPress={loadData}>
+            <Text style={{ color: C.white, fontWeight: "800", fontSize: 15 }}>
+              Muat Ulang
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
+  const s = monthlySummary;
+  const profitColor = s.profit >= 0 ? C.income : C.expense;
+
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
-      <View style={styles.content}>
-        <Text style={[styles.periodTitle, { color: colors.text }]}>
-          {getMonthYear(
-            parseInt(monthlySummary.period.split("-")[0]),
-            parseInt(monthlySummary.period.split("-")[1])
-          )}
-        </Text>
+    <SafeAreaView style={ss.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <ScrollView
+        style={ss.scroll}
+        contentContainerStyle={ss.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Page Header - Transparent */}
+        <Animated.View entering={FadeInDown.duration(400).delay(100)} style={ss.pageHeader}>
+          <Text style={ss.pageSub}>Laporan Bulanan</Text>
+          <Text style={ss.pageTitle}>{getMonthYear(year, month)}</Text>
+        </Animated.View>
 
-        {/* Population Info */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            📊 Informasi Puyuh
+        {/* Profit Hero - Borderless, Soft styling */}
+        <Animated.View entering={FadeInDown.duration(400).delay(200)} style={ss.heroCard}>
+          <Text style={ss.heroLabel}>Profit / Rugi Bersih</Text>
+          <Text style={[ss.heroProfit, { color: profitColor }]}>
+            {s.profit >= 0 ? "+" : ""}
+            {formatCurrency(s.profit)}
           </Text>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Total Puyuh:
-            </Text>
-            <Text style={[styles.value, { color: colors.tint }]}>
-              {formatNumber(monthlySummary.total_puyuh)} ekor
-            </Text>
+          <View style={ss.heroRow}>
+            <View style={ss.heroPill}>
+              <Text style={ss.heroPillText}>
+                ROI: {s.roi_percentage.toFixed(2)}%
+              </Text>
+            </View>
+            <Text style={ss.heroPeriod}>{s.period}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Mati bulan ini:
-            </Text>
-            <Text style={[styles.value, { color: "#C62828" }]}>
-              {formatNumber(monthlySummary.puyuh_died_count)} ekor
-            </Text>
-          </View>
-        </View>
+        </Animated.View>
 
-        {/* Production Info */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            🥚 Produksi Telur
-          </Text>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Per Hari (Rata-rata):
-            </Text>
-            <Text style={[styles.value, { color: colors.tint }]}>
-              {formatNumber(monthlySummary.avg_eggs_per_day)} pcs
+        {/* Finance Summary Row - Borderless, dark background contrast */}
+        <Animated.View entering={FadeInDown.duration(400).delay(300)} style={ss.finRow}>
+          <View style={[ss.finCard, { backgroundColor: "#0F2A1F" }]}>
+            <Text style={ss.finLabel}>Total Pendapatan</Text>
+            <Text style={[ss.finAmount, { color: C.income }]}>
+              {formatCurrency(s.total_income)}
             </Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Per Bulan:
-            </Text>
-            <Text style={[styles.value, { color: colors.tint }]}>
-              {formatNumber(monthlySummary.eggs_produced)} pcs
+          <View style={[ss.finCard, { backgroundColor: "#2A0F0F" }]}>
+            <Text style={ss.finLabel}>Total Pengeluaran</Text>
+            <Text style={[ss.finAmount, { color: C.expense }]}>
+              {formatCurrency(s.total_expense)}
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
-        {/* Egg Status */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            🔄 Status Telur Bulan Ini
-          </Text>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Diproduksi:
-            </Text>
-            <Text style={[styles.value, { color: "#2E7D32" }]}>
-              {formatNumber(monthlySummary.eggs_produced)} pcs
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>Pecah:</Text>
-            <Text style={[styles.value, { color: "#C62828" }]}>
-              {formatNumber(monthlySummary.eggs_broken)} pcs (
-              {monthlySummary.eggs_produced > 0
-                ? (
-                    (monthlySummary.eggs_broken /
-                      monthlySummary.eggs_produced) *
-                    100
-                  ).toFixed(1)
-                : 0}
-              %)
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Terjual:
-            </Text>
-            <Text style={[styles.value, { color: "#1565C0" }]}>
-              {formatNumber(monthlySummary.eggs_sold)} pcs (
-              {monthlySummary.eggs_produced > 0
-                ? (
-                    (monthlySummary.eggs_sold /
-                      monthlySummary.eggs_produced) *
-                    100
-                  ).toFixed(1)
-                : 0}
-              %)
-            </Text>
-          </View>
-        </View>
+        {/* Puyuh Section - Borderless, spacing distinct */}
+        <Animated.View entering={FadeInDown.duration(400).delay(400)}>
+          <SectionCard title="Populasi Puyuh" accent={C.red}>
+            <View style={ss.metricRow}>
+              <MetricBig
+                label="Total Ekor"
+                value={`${formatNumber(s.total_puyuh)}`}
+                color={C.textPrimary}
+              />
+              <MetricBig
+                label="Mati Bulan Ini"
+                value={`${formatNumber(s.puyuh_died_count)}`}
+                color={s.puyuh_died_count > 0 ? C.expense : C.textPrimary}
+              />
+            </View>
+            {s.puyuh_by_age.map((g) => (
+              <InfoRow
+                key={`${g.age_months}-${g.status}`}
+                label={`Usia ${g.age_months} bln (${g.status})`}
+                value={`${formatNumber(g.count)} ekor`}
+              />
+            ))}
+          </SectionCard>
+        </Animated.View>
 
-        {/* Feed Info */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            🍖 Konsumsi Pakan
-          </Text>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Per Hari (Rata-rata):
-            </Text>
-            <Text style={[styles.value, { color: colors.tint }]}>
-              {monthlySummary.avg_feed_per_day.toFixed(2)} kg
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Per Bulan:
-            </Text>
-            <Text style={[styles.value, { color: colors.tint }]}>
-              {monthlySummary.total_feed_kg.toFixed(2)} kg
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Biaya Pakan:
-            </Text>
-            <Text style={[styles.value, { color: "#C62828" }]}>
-              {formatCurrency(monthlySummary.total_feed_cost)}
-            </Text>
-          </View>
-        </View>
+        {/* Production Section */}
+        <Animated.View entering={FadeInDown.duration(400).delay(500)}>
+          <SectionCard title="Produksi Telur" accent={C.income}>
+            <View style={ss.metricRow}>
+              <MetricBig
+                label="Per Bulan"
+                value={`${formatNumber(s.eggs_produced)}`}
+                color={C.textPrimary}
+              />
+              <MetricBig
+                label="Rata-rata / Hari"
+                value={`${formatNumber(s.avg_eggs_per_day)}`}
+                color={C.income}
+              />
+            </View>
+            <InfoRow
+              label="Harga Rata-rata / Pcs"
+              value={formatCurrency(s.avg_price_per_egg)}
+            />
+            <InfoRow
+              label="Terjual"
+              value={`${formatNumber(s.eggs_sold)} pcs`}
+              valueColor={C.income}
+            />
+            <InfoRow
+              label="Belum Dijual"
+              value={`${formatNumber(s.eggs_available)} pcs`}
+              valueColor="#F59E0B"
+            />
+            <InfoRow
+              label="Pecah / Rusak"
+              value={`${formatNumber(s.eggs_broken)} pcs`}
+              valueColor={C.expense}
+            />
+          </SectionCard>
+        </Animated.View>
 
-        {/* Financial Summary */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            💵 Ringkasan Keuangan
-          </Text>
+        {/* Feed Section */}
+        <Animated.View entering={FadeInDown.duration(400).delay(600)}>
+          <SectionCard title="Konsumsi Pakan" accent="#F59E0B">
+            <View style={ss.metricRow}>
+              <MetricBig
+                label="Total / Bulan"
+                value={`${s.total_feed_kg.toFixed(1)} kg`}
+                color={C.textPrimary}
+              />
+              <MetricBig
+                label="Rata-rata / Hari"
+                value={`${s.avg_feed_per_day.toFixed(2)} kg`}
+                color="#F59E0B"
+              />
+            </View>
+            <InfoRow
+              label="Biaya Pakan"
+              value={formatCurrency(s.total_feed_cost)}
+              valueColor={C.expense}
+              bold
+            />
+          </SectionCard>
+        </Animated.View>
 
-          <Text
-            style={[styles.subtitle, { color: colors.text }]}
-          >
-            Pendapatan:
-          </Text>
-          {Object.entries(monthlySummary.income_by_category).map(
-            ([category, amount]) => (
-              <View key={category} style={styles.infoRow}>
-                <Text style={[styles.label, { color: colors.text }]}>
-                  - {category}:
-                </Text>
-                <Text style={[styles.value, { color: "#2E7D32" }]}>
-                  {formatCurrency(amount)}
-                </Text>
-              </View>
-            )
-          )}
-          <View
-            style={[styles.totalRow, { borderTopColor: colors.text }]}
-          >
-            <Text style={[styles.label, { color: colors.text }]}>
-              Total Pendapatan:
-            </Text>
-            <Text style={[styles.value, { color: "#2E7D32", fontWeight: "700" }]}>
-              {formatCurrency(monthlySummary.total_income)}
-            </Text>
-          </View>
+        {/* Finance Detail */}
+        <Animated.View entering={FadeInDown.duration(400).delay(700)}>
+          <SectionCard title="Rincian Keuangan" accent={C.income}>
+            {/* Income by category */}
+            {Object.keys(s.income_by_category).length > 0 ? (
+              <>
+                <Text style={ss.subSectionLabel}>Pendapatan per Kategori</Text>
+                {Object.entries(s.income_by_category).map(([cat, amt]) => (
+                  <InfoRow
+                    key={cat}
+                    label={cat}
+                    value={formatCurrency(amt)}
+                    valueColor={C.income}
+                  />
+                ))}
+              </>
+            ) : null}
+            <InfoRow
+              label="Total Pendapatan"
+              value={formatCurrency(s.total_income)}
+              valueColor={C.income}
+              bold
+            />
 
-          <Text
-            style={[
-              styles.subtitle,
-              { color: colors.text, marginTop: 16 },
-            ]}
-          >
-            Pengeluaran:
-          </Text>
-          {Object.entries(monthlySummary.expense_by_category).map(
-            ([category, amount]) => (
-              <View key={category} style={styles.infoRow}>
-                <Text style={[styles.label, { color: colors.text }]}>
-                  - {category}:
-                </Text>
-                <Text style={[styles.value, { color: "#C62828" }]}>
-                  {formatCurrency(amount)}
-                </Text>
-              </View>
-            )
-          )}
-          <View
-            style={[styles.totalRow, { borderTopColor: colors.text }]}
-          >
-            <Text style={[styles.label, { color: colors.text }]}>
-              Total Pengeluaran:
-            </Text>
-            <Text style={[styles.value, { color: "#C62828", fontWeight: "700" }]}>
-              {formatCurrency(monthlySummary.total_expense)}
-            </Text>
-          </View>
+            <View style={ss.divider} />
 
-          <View
-            style={[
-              styles.totalRow,
-              {
-                borderTopColor: colors.tint,
-                backgroundColor: colors.background,
-                marginTop: 12,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.label,
-                { color: colors.text, fontWeight: "700" },
-              ]}
-            >
-              PROFIT:
-            </Text>
-            <Text
-              style={[
-                styles.value,
-                { color: colors.tint, fontWeight: "700", fontSize: 18 },
-              ]}
-            >
-              {formatCurrency(monthlySummary.profit)}
-            </Text>
-          </View>
+            {/* Expense by category */}
+            {Object.keys(s.expense_by_category).length > 0 ? (
+              <>
+                <Text style={ss.subSectionLabel}>Pengeluaran per Kategori</Text>
+                {Object.entries(s.expense_by_category).map(([cat, amt]) => (
+                  <InfoRow
+                    key={cat}
+                    label={cat}
+                    value={formatCurrency(amt)}
+                    valueColor={C.expense}
+                  />
+                ))}
+              </>
+            ) : null}
+            <InfoRow
+              label="Total Pengeluaran"
+              value={formatCurrency(s.total_expense)}
+              valueColor={C.expense}
+              bold
+            />
 
-          <View style={styles.infoRow}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              ROI (%):
-            </Text>
-            <Text style={[styles.value, { color: colors.tint }]}>
-              {monthlySummary.roi_percentage.toFixed(2)}%
-            </Text>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
+            <View style={ss.divider} />
+
+            {/* Bottom profit line */}
+            <View style={ss.profitLine}>
+              <Text style={ss.profitLineLabel}>PROFIT BERSIH</Text>
+              <Text style={[ss.profitLineValue, { color: profitColor }]}>
+                {s.profit >= 0 ? "+" : ""}
+                {formatCurrency(s.profit)}
+              </Text>
+            </View>
+          </SectionCard>
+        </Animated.View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
+// ─── Styles ──────────────────────────────────────────────────────
+const ss = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.bg },
+  scroll: { flex: 1 },
+  content: { padding: S.lg, paddingBottom: S.xl, gap: 24 },
+
+  // Page header - Transparent
+  pageHeader: { paddingTop: S.sm },
+  pageSub: { color: C.textSecondary, fontSize: 13, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 },
+  pageTitle: {
+    color: C.textPrimary,
+    fontSize: 28,
+    fontWeight: "900",
+    marginTop: 4,
+  },
+
+  // Hero - Borderless
+  heroCard: {
+    backgroundColor: C.card,
+    borderRadius: 24,
+    padding: 28,
+  },
+  heroLabel: {
+    color: C.textSecondary,
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  heroProfit: {
+    fontSize: 40,
+    fontWeight: "900",
+    letterSpacing: -1.5,
+    marginBottom: 16,
+  },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  heroPill: {
+    backgroundColor: C.card2,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  heroPillText: { color: C.textPrimary, fontSize: 13, fontWeight: "700" },
+  heroPeriod: { color: C.textMuted, fontSize: 13, fontWeight: "600" },
+
+  // Finance row - Borderless
+  finRow: { flexDirection: "row", gap: 16 },
+  finCard: {
     flex: 1,
+    borderRadius: 20,
+    padding: 20,
+    gap: 6,
   },
-  content: {
+  finLabel: { color: C.textSecondary, fontSize: 12, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+  finAmount: { fontSize: 18, fontWeight: "900" },
+
+  // Section card - Borderless
+  sectionCard: {
+    backgroundColor: C.card,
+    borderRadius: 24,
+    padding: 24,
+    gap: 12,
+  },
+  sectionCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 8,
+  },
+  sectionAccentDot: { width: 10, height: 10, borderRadius: 5 },
+  sectionCardTitle: { color: C.textPrimary, fontSize: 18, fontWeight: "800" },
+
+  // Metric big - Soft bg, borderless
+  metricRow: { flexDirection: "row", gap: 12, marginBottom: 8 },
+  metricBig: {
+    flex: 1,
+    backgroundColor: C.card2,
+    borderRadius: 16,
     padding: 16,
-    gap: 16,
-    paddingBottom: 32,
+    gap: 4,
   },
-  periodTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  section: {
-    padding: 14,
-    borderRadius: 8,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 8,
-    marginBottom: 8,
-    opacity: 0.7,
-  },
+  metricBigLabel: { color: C.textSecondary, fontSize: 12, fontWeight: "700" },
+  metricBigValue: { color: C.textPrimary, fontSize: 24, fontWeight: "900" },
+
+  // Info row
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 6,
+    alignItems: "center",
+    paddingVertical: 8,
   },
-  totalRow: {
+  infoLabel: { color: C.textSecondary, fontSize: 14, flex: 1, fontWeight: "500" },
+  infoValue: {
+    color: C.textPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "right",
+  },
+
+  // Sub section
+  subSectionLabel: {
+    color: C.textMuted,
+    fontSize: 12,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  divider: { height: 1, backgroundColor: C.border, marginVertical: 12 },
+
+  // Profit line
+  profitLine: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    marginTop: 8,
+    alignItems: "center",
     paddingTop: 8,
   },
-  label: {
-    fontSize: 13,
-  },
-  value: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  emptyText: {
+  profitLineLabel: {
+    color: C.textSecondary,
     fontSize: 14,
-    opacity: 0.6,
-    textAlign: "center",
-    marginTop: 40,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  profitLineValue: { fontSize: 24, fontWeight: "900" },
+
+  // Misc
+  retryBtn: {
+    backgroundColor: C.red,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 20,
   },
 });
