@@ -1,6 +1,6 @@
 import { ProductionQueries } from "@/database/queries/production.queries";
 import { TransactionQueries } from "@/database/queries/transaction.queries";
-import { DailyProduction, TransactionType } from "@/types";
+import { TransactionType, type DailyProduction } from "@/types";
 import { getDateRange, storeError } from "@/utils/format";
 import { create } from "zustand";
 

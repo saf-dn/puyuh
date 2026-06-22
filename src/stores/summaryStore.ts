@@ -2,7 +2,7 @@ import { DailyFeedQueries } from "@/database/queries/feed.queries";
 import { ProductionQueries } from "@/database/queries/production.queries";
 import { PuyuhQueries } from "@/database/queries/puyuh.queries";
 import { TransactionQueries } from "@/database/queries/transaction.queries";
-import { DailyProduction, DailyProductionInput, MonthlySummary } from "@/types";
+import type { DailyProduction, DailyProductionInput, MonthlySummary } from "@/types";
 import { getDaysInMonth, storeError } from "@/utils/format";
 import { create } from "zustand";
 

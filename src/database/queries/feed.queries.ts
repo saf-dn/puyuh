@@ -1,5 +1,5 @@
 import { supabase } from "@/database/supabase";
-import { DailyFeed, DailyFeedInput, FeedType, FeedTypeInput } from "@/types";
+import type { DailyFeed, DailyFeedInput, FeedType, FeedTypeInput } from "@/types";
 import { v4 as uuid } from "uuid";
 
 export const FeedTypeQueries = {

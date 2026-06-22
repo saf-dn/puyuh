@@ -1,5 +1,5 @@
 import { DailyFeedQueries } from "@/database/queries/feed.queries";
-import { DailyFeed } from "@/types";
+import type { DailyFeed } from "@/types";
 import { getDateRange, storeError } from "@/utils/format";
 import { create } from "zustand";
 

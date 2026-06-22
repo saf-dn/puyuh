@@ -3,11 +3,11 @@ import {
   TransactionQueries,
 } from "@/database/queries/transaction.queries";
 import {
-  ExpenseCategory,
-  IncomeCategory,
-  Transaction,
-  TransactionInput,
   TransactionType,
+  type ExpenseCategory,
+  type IncomeCategory,
+  type Transaction,
+  type TransactionInput,
 } from "@/types";
 import { getDateRange, storeError } from "@/utils/format";
 import { create } from "zustand";

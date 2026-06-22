@@ -1,6 +1,6 @@
 import { FeedTypeQueries } from "@/database/queries/feed.queries";
 import { PuyuhQueries } from "@/database/queries/puyuh.queries";
-import { FeedType, FeedTypeInput, Puyuh, PuyuhInput } from "@/types";
+import type { FeedType, FeedTypeInput, Puyuh, PuyuhInput } from "@/types";
 import { storeError } from "@/utils/format";
 import { create } from "zustand";
 

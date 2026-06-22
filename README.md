@@ -1,99 +1,73 @@
-# Project Puyuh
+# React + TypeScript + Vite
 
-Aplikasi manajemen peternakan puyuh (burung puyuh) berbasis **Expo SDK 56** + **React Native** dengan penyimpanan data lokal **SQLite**.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Fitur Utama
+Currently, two official plugins are available:
 
-| Menu | Fungsi |
-|------|--------|
-| **Keuangan** | Pencatatan pemasukan & pengeluaran dengan kategori |
-| **Puyuh** | Data populasi, pakan harian, produksi telur |
-| **Ringkasan** | Dashboard gabungan populasi, produksi, pakan & keuangan |
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Persyaratan
+## React Compiler
 
-- Node.js 18+
-- npm
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Instalasi & Menjalankan
+## Expanding the ESLint configuration
 
-```bash
-npm install
-npx expo start --web
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-Perintah lain:
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-```bash
-npm run web          # Buka di browser
-npm run android      # Android emulator/device
-npm run ios          # iOS simulator (macOS)
-npm run lint         # Cek kode ESLint
-npm run smoke-test   # Tes semua route web (server harus jalan)
-npm run export:web   # Build statis untuk deploy web
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-## Struktur Proyek
-
-```
-src/
-├── app/                    # Expo Router (layar & navigasi)
-│   ├── (tabs)/
-│   │   ├── finance/        # Menu keuangan
-│   │   ├── puyuh/          # Menu detail puyuh
-│   │   └── summary/        # Menu ringkasan
-│   └── _layout.tsx         # Root layout + init database
-├── components/forms/       # Form input data
-├── database/               # SQLite schema & queries
-├── stores/                 # State management (Zustand)
-├── types/                  # TypeScript types
-└── utils/                  # Helper format tanggal & mata uang
-```
-
-## Konfigurasi Web (SQLite)
-
-Aplikasi menggunakan `expo-sqlite` di web via WebAssembly. Konfigurasi sudah diset:
-
-- `metro.config.js` — dukungan file `.wasm`
-- `app.json` — plugin `expo-sqlite` + header COOP/COEP untuk SharedArrayBuffer
-
-Jika web error terkait database, restart dengan cache bersih:
-
-```bash
-npx expo start --web --clear
-```
-
-## Kategori Keuangan (Default)
-
-**Pengeluaran:** Pakan, Bibit, Vitamin & Obat, Kandang & Equipment, Kardus Telur, Ongkos Kirim, Lainnya
-
-**Pendapatan:** Penjualan Telur, Penjualan Puyuh, Penjualan Kotoran, Lainnya
-
-## Alur Penggunaan
-
-1. **Puyuh** → Tambah grup puyuh (usia, jumlah ekor)
-2. **Puyuh** → Catat pakan harian (frekuensi, gram/ekor)
-3. **Puyuh** → Catat produksi telur harian
-4. **Keuangan** → Catat pemasukan/pengeluaran
-5. **Ringkasan** → Lihat laporan bulanan
-
-Panduan lengkap pengguna: [docs/PANDUAN.md](docs/PANDUAN.md)
-
-## Pengujian
-
-Smoke test (pastikan dev server berjalan di port 8081):
-
-```bash
-npm run smoke-test
-```
-
-## Teknologi
-
-- [Expo SDK 56](https://docs.expo.dev/versions/v56.0.0/)
-- [Expo Router](https://docs.expo.dev/router/introduction/)
-- [expo-sqlite](https://docs.expo.dev/versions/v56.0.0/sdk/sqlite/)
-- [Zustand](https://github.com/pmndrs/zustand)
-
-## Lisensi
-
-Lihat file [LICENSE](LICENSE).

@@ -1,375 +1,159 @@
-import { ThemeText as Text } from "@/components/ui/ThemeText";
-import { C, S } from "@/constants/theme";
-import { useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { AnimatedButton, AnimatedInput } from "../ui/AnimatedMicro";
+import React, { useState } from 'react';
+import Modal from '../ui/Modal';
 
-interface Option {
-  id: string;
-  name: string;
-}
 
 interface FeedFormProps {
-  visible: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: {
-    puyuhGroupId: string;
-    feedTypeId: string;
-    frequencyPerDay: number;
-    amountPerBird: number;
-  }) => Promise<void>;
+  onSubmit: (data: { puyuhGroupId: string; feedTypeId: string; frequencyPerDay: number; amountPerBird: number; }) => Promise<void>;
   puyuhGroups: { id: string; name: string; count: number }[];
   feedTypes: { id: string; name: string }[];
-  loading?: boolean;
+  isLoading: boolean;
 }
 
-function ChipSelect({
-  options,
-  selectedId,
-  onSelect,
-}: {
-  options: Option[];
-  selectedId: string;
-  onSelect: (id: string) => void;
-}) {
-  if (options.length === 0) {
-    return (
-      <Text style={{ color: C.textMuted, fontSize: 13, fontWeight: "500" }}>
-        Tidak ada pilihan tersedia
-      </Text>
-    );
-  }
+export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedTypes, isLoading }: FeedFormProps) {
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [puyuhId, setPuyuhId] = useState('');
+  const [feedTypeId, setFeedTypeId] = useState('');
+  const [amountPerBird, setAmountPerBird] = useState('25'); // default 25g
+  const [frequencyPerDay, setFrequencyPerDay] = useState('2'); // default 2x
+  const [error, setError] = useState<string | null>(null);
 
-  return (
-    <View style={styles.chipRow}>
-      {options.map((option) => {
-        const selected = selectedId === option.id;
-        return (
-          <AnimatedButton
-            key={option.id}
-            style={[
-              styles.chip,
-              selected && { backgroundColor: "#1565C0" },
-            ]}
-            onPress={() => onSelect(option.id)}
-          >
-            <Text
-              style={[
-                styles.chipText,
-                selected && { color: C.white, fontWeight: "700" },
-              ]}
-            >
-              {option.name}
-            </Text>
-          </AnimatedButton>
-        );
-      })}
-    </View>
-  );
-}
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
-export default function FeedForm({
-  visible,
-  onClose,
-  onSubmit,
-  puyuhGroups,
-  feedTypes,
-  loading = false,
-}: FeedFormProps) {
-  const [formData, setFormData] = useState({
-    puyuhGroupId: puyuhGroups[0]?.id || "",
-    feedTypeId: feedTypes[0]?.id || "",
-    frequencyPerDay: "",
-    amountPerBird: "",
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const resetForm = () => {
-    setFormData({
-      puyuhGroupId: puyuhGroups[0]?.id || "",
-      feedTypeId: feedTypes[0]?.id || "",
-      frequencyPerDay: "",
-      amountPerBird: "",
-    });
-    setErrors({});
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-
-
-    if (!formData.frequencyPerDay.trim()) {
-      newErrors.frequencyPerDay = "Frekuensi pemberian harus diisi";
-    } else if (
-      isNaN(Number(formData.frequencyPerDay)) ||
-      Number(formData.frequencyPerDay) <= 0
-    ) {
-      newErrors.frequencyPerDay = "Masukkan angka yang valid (> 0)";
+    if (!puyuhId) {
+      setError('Pilih kelompok puyuh');
+      return;
     }
-
-    if (!formData.amountPerBird.trim()) {
-      newErrors.amountPerBird = "Jumlah pakan per ekor harus diisi";
-    } else if (
-      isNaN(Number(formData.amountPerBird)) ||
-      Number(formData.amountPerBird) <= 0
-    ) {
-      newErrors.amountPerBird = "Masukkan jumlah yang valid (> 0, dalam gram)";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) {
+    if (!feedTypeId) {
+      setError('Pilih jenis pakan');
       return;
     }
 
+    const parsedAmount = parseFloat(amountPerBird);
+    const parsedFreq = parseInt(frequencyPerDay, 10);
+
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError('Gram/ekor harus lebih dari 0');
+      return;
+    }
+    if (isNaN(parsedFreq) || parsedFreq <= 0) {
+      setError('Frekuensi harus lebih dari 0');
+      return;
+    }
+
+    const group = puyuhGroups.find(g => g.id === puyuhId);
+    if (!group) return;
+
     try {
       await onSubmit({
-        puyuhGroupId: formData.puyuhGroupId,
-        feedTypeId: formData.feedTypeId,
-        frequencyPerDay: Number(formData.frequencyPerDay),
-        amountPerBird: Number(formData.amountPerBird),
+        puyuhGroupId: puyuhId,
+        feedTypeId: feedTypeId,
+        amountPerBird: parsedAmount,
+        frequencyPerDay: parsedFreq,
       });
+      
       onClose();
-    } catch {
-      // Error handled by parent store
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan saat menyimpan data');
     }
   };
 
-  const handleClose = () => {
-    onClose();
-  };
-
-  const totalPuyuh = puyuhGroups.reduce((sum, g) => sum + g.count, 0);
-  const totalAmountPerDay = ((Number(formData.amountPerBird) || 0) *
-    (Number(formData.frequencyPerDay) || 0) *
-    totalPuyuh) /
-    1000;
-
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={handleClose}
-      presentationStyle="pageSheet"
-    >
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <View style={styles.header}>
-          <AnimatedButton style={styles.headerBtn} onPress={handleClose}>
-            <Text style={styles.cancelButton}>Batal</Text>
-          </AnimatedButton>
-          <Text style={styles.title}>Catat Pakan</Text>
-          <AnimatedButton style={styles.headerBtn} onPress={handleSubmit} disabled={loading}>
-            <Text
-              style={[
-                styles.saveButton,
-                { color: "#1565C0", opacity: loading ? 0.5 : 1 },
-              ]}
-            >
-              {loading ? "Menyimpan" : "Simpan"}
-            </Text>
-          </AnimatedButton>
-        </View>
+    <Modal isOpen={isOpen} onClose={onClose} title="Catat Pemberian Pakan">
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label className="form-label">Tanggal</label>
+          <input
+            type="date"
+            className="form-input"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+          />
+        </div>
 
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={{ paddingBottom: 60 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.formGroup}>
-            <View style={styles.field}>
-              <Text style={styles.label}>Total Puyuh</Text>
-              <Text style={{ fontSize: 16, color: C.textPrimary, fontWeight: "600", marginTop: 4 }}>
-                {totalPuyuh} ekor
-              </Text>
-            </View>
-
-            <View style={styles.field}>
-              <Text style={styles.label}>Frekuensi per Hari *</Text>
-              <AnimatedInput
-
-                keyboardType="decimal-pad"
-                value={formData.frequencyPerDay}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, frequencyPerDay: text })
-                }
-                editable={!loading}
-                error={!!errors.frequencyPerDay}
-              />
-              {errors.frequencyPerDay ? (
-                <Text style={styles.errorText}>{errors.frequencyPerDay}</Text>
-              ) : null}
-            </View>
-
-            <View style={styles.field}>
-              <Text style={styles.label}>Jumlah Pakan per Ekor (g) *</Text>
-              <AnimatedInput
-                placeholder="Contoh: 25"
-                keyboardType="decimal-pad"
-                value={formData.amountPerBird}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, amountPerBird: text })
-                }
-                editable={!loading}
-                error={!!errors.amountPerBird}
-              />
-              {errors.amountPerBird ? (
-                <Text style={styles.errorText}>{errors.amountPerBird}</Text>
-              ) : null}
-            </View>
-          </View>
-
-          <View style={styles.summaryBox}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Total Pakan per Hari:</Text>
-              <Text style={styles.summaryValue}>
-                {totalAmountPerDay.toFixed(2)} kg
-              </Text>
-            </View>
-            <Text style={styles.summaryNote}>
-              {`${totalPuyuh} ekor × ${formData.amountPerBird || 0}g × ${formData.frequencyPerDay || 0}x`}
-            </Text>
-          </View>
-
-          <AnimatedButton
-            style={styles.resetBtn}
-            onPress={resetForm}
-            disabled={loading}
+        <div className="form-group">
+          <label className="form-label">Kelompok Puyuh</label>
+          <select 
+            className="form-select"
+            value={puyuhId}
+            onChange={(e) => setPuyuhId(e.target.value)}
+            required
           >
-            <Text style={styles.resetBtnText}>🔄 Reset Form</Text>
-          </AnimatedButton>
-        </ScrollView>
-      </KeyboardAvoidingView>
+            <option value="" disabled>Pilih Kelompok</option>
+            {puyuhGroups.map(g => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Jenis Pakan</label>
+          <select 
+            className="form-select"
+            value={feedTypeId}
+            onChange={(e) => setFeedTypeId(e.target.value)}
+            required
+          >
+            <option value="" disabled>Pilih Pakan</option>
+            {feedTypes.map(f => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="form-label">Gram / Ekor</label>
+            <input
+              type="number"
+              className="form-input"
+              value={amountPerBird}
+              onChange={(e) => setAmountPerBird(e.target.value)}
+              placeholder="25"
+              required
+              min="1"
+            />
+          </div>
+
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="form-label">Frekuensi / Hari</label>
+            <input
+              type="number"
+              className="form-input"
+              value={frequencyPerDay}
+              onChange={(e) => setFrequencyPerDay(e.target.value)}
+              placeholder="2"
+              required
+              min="1"
+            />
+          </div>
+        </div>
+
+        {error && <div className="form-error">{error}</div>}
+
+        <div className="form-actions">
+          <button 
+            type="button" 
+            className="btn glass-panel" 
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            className="btn btn-primary"
+            style={{ backgroundColor: '#1565C0' }}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Menyimpan...' : 'Simpan Data'}
+          </button>
+        </div>
+      </form>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: C.bg,
-  },
-  header: {
-    paddingTop: Platform.OS === "ios" ? 16 : 24,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    backgroundColor: C.card,
-  },
-  headerBtn: {
-    minWidth: 60,
-    minHeight: 40,
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: C.textPrimary,
-    flex: 1,
-    textAlign: "center",
-  },
-  cancelButton: {
-    fontSize: 16,
-    color: C.textSecondary,
-    fontWeight: "500",
-  },
-  saveButton: {
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "right",
-  },
-  content: {
-    flex: 1,
-    padding: S.lg,
-  },
-  formGroup: {
-    backgroundColor: C.card,
-    borderRadius: 24,
-    padding: 20,
-    gap: 24,
-    marginBottom: 24,
-    marginTop: 8,
-  },
-  field: {
-    gap: 12,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: C.textPrimary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 999,
-    backgroundColor: C.card2,
-    alignItems: "center",
-  },
-  chipText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: C.textSecondary,
-  },
-  errorText: {
-    color: C.expense,
-    fontSize: 13,
-    fontWeight: "600",
-    marginTop: 4,
-  },
-  summaryBox: {
-    backgroundColor: C.card2,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  summaryLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: C.textSecondary,
-  },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: C.textPrimary,
-  },
-  summaryNote: {
-    fontSize: 13,
-    marginTop: 8,
-    color: C.textMuted,
-    fontWeight: "500",
-  },
-  resetBtn: {
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: "center",
-    backgroundColor: C.card,
-  },
-  resetBtnText: {
-    color: C.textSecondary,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-});

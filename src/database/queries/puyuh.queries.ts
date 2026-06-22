@@ -1,5 +1,5 @@
 import { supabase } from "@/database/supabase";
-import { Puyuh, PuyuhInput, PuyuhStatus } from "@/types";
+import { PuyuhStatus, type Puyuh, type PuyuhInput } from "@/types";
 import { v4 as uuid } from "uuid";
 
 export const PuyuhQueries = {
@@ -101,7 +101,7 @@ export const PuyuhQueries = {
   },
 
   async delete(id: string): Promise<boolean> {
-    const { error, count } = await supabase.from("puyuh").delete().eq("id", id);
+    const { error } = await supabase.from("puyuh").delete().eq("id", id);
 
     if (error) throw new Error(error.message);
     return true;

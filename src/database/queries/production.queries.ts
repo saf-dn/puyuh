@@ -1,5 +1,5 @@
 import { supabase } from "@/database/supabase";
-import { DailyProduction, DailyProductionInput } from "@/types";
+import type { DailyProduction, DailyProductionInput } from "@/types";
 import { v4 as uuid } from "uuid";
 
 export const ProductionQueries = {

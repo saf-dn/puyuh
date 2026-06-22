@@ -1,9 +1,9 @@
 import { supabase } from "@/database/supabase";
 import {
-    ExpenseCategory,
-    IncomeCategory,
-    Transaction,
-    TransactionInput,
+    type ExpenseCategory,
+    type IncomeCategory,
+    type Transaction,
+    type TransactionInput,
     TransactionType,
 } from "@/types";
 import { v4 as uuid } from "uuid";
