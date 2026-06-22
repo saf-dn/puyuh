@@ -24,6 +24,17 @@ export const C = {
   white: '#FFFFFF',
 } as const;
 
+export const F = {
+  body: 'Inter_400Regular',
+  bodyMed: 'Inter_500Medium',
+  bodySemi: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
+  
+  heading: 'Outfit_500Medium',
+  headingSemi: 'Outfit_600SemiBold',
+  headingBold: 'Outfit_700Bold',
+} as const;
+
 export const R = {
   sm:  10,
   md:  14,

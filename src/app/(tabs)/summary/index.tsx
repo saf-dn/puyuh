@@ -1,19 +1,10 @@
 import { C, S } from "@/constants/theme";
 import { useSummaryStore } from "@/stores/summaryStore";
-import { formatCurrency, formatNumber, getMonthYear } from "@/utils/format";
+import { calculateAge, formatCurrency, formatNumber, getMonthYear } from "@/utils/format";
 import { useCallback, useEffect } from "react";
-import {
-  ActivityIndicator,
-  ColorValue,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, ColorValue, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { ThemeText as Text } from "@/components/ui/ThemeText";
 
 // ─── Info Row ────────────────────────────────────────────────────
 function InfoRow({
@@ -233,8 +224,8 @@ export default function SummaryScreen() {
             </View>
             {s.puyuh_by_age.map((g) => (
               <InfoRow
-                key={`${g.age_months}-${g.status}`}
-                label={`Usia ${g.age_months} bln (${g.status})`}
+                key={`${g.age_months}-${g.status}-${g.created_at}`}
+                label={`Usia ${calculateAge(g.age_months, g.created_at)} (${g.status})`}
                 value={`${formatNumber(g.count)} ekor`}
               />
             ))}

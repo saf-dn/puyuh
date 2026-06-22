@@ -41,7 +41,9 @@ export const useProductionStore = create<ProductionStore>((set, get) => ({
 
   loadProductions: async (year: number, month: number) => {
     try {
-      set({ isLoading: true, error: null });
+      const hasData = get().productions.length > 0 || get().todayProduction !== null;
+      if (!hasData) set({ isLoading: true, error: null });
+      else set({ error: null });
       const today = new Date().toISOString().split("T")[0];
       const { start, end } = getDateRange(year, month);
 

@@ -5,17 +5,9 @@ import { TransactionType } from "@/types";
 import { formatCurrency, getMonthYear } from "@/utils/format";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { ThemeText as Text } from "@/components/ui/ThemeText";
 
 // ─── Sub-components ──────────────────────────────────────────────
 
@@ -126,7 +118,7 @@ function TransactionRow({
           </Text>
         ) : null}
       </View>
-      <View style={{ alignItems: "flex-right" }}>
+      <View style={{ alignItems: "flex-end" }}>
         <Text style={[s.txAmount, { color: isIncome ? C.income : C.expense }]}>
           {isIncome ? "+" : "-"}
           {formatCurrency(amount)}

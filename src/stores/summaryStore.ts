@@ -32,7 +32,10 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   currentDate: new Date().toISOString().split("T")[0],
 
   loadMonthlySummary: async (year: number, month: number) => {
-    set({ isLoading: true, error: null });
+    const hasData = get().monthlySummary !== null;
+    if (!hasData) set({ isLoading: true, error: null });
+    else set({ error: null });
+    
     try {
       const [prodStats, finStats, allPuyuhs, puyuhDied, feedCosts] = await Promise.all([
         ProductionQueries.getMonthlyStats(year, month),
@@ -46,6 +49,7 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
         age_months: p.age_months,
         count: p.count,
         status: p.status,
+        created_at: p.created_at,
       }));
 
       const summary: MonthlySummary = {

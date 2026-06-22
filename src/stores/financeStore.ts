@@ -46,7 +46,15 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   },
 
   loadFinanceData: async (year: number, month: number) => {
-    set({ isLoading: true, error: null });
+    const isSameMonth = get().currentMonth.year === year && get().currentMonth.month === month;
+    const hasData = get().incomeTransactions.length > 0 || get().expenseTransactions.length > 0;
+    
+    if (!isSameMonth || !hasData) {
+      set({ isLoading: true, error: null });
+    } else {
+      set({ error: null }); // fetch in background without blocking UI
+    }
+    
     try {
       const { start, end } = getDateRange(year, month);
 

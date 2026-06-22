@@ -1,17 +1,9 @@
-import { fadedColor } from "@/constants/theme";
+import { ThemeText as Text } from "@/components/ui/ThemeText";
+import { C, S } from "@/constants/theme";
 import { PuyuhInput, PuyuhStatus } from "@/types";
-import { DarkTheme, DefaultTheme } from "expo-router";
 import { useState } from "react";
-import {
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    useColorScheme,
-    View,
-} from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { AnimatedButton, AnimatedInput } from "../ui/AnimatedMicro";
 
 interface PuyuhFormProps {
   visible: boolean;
@@ -26,20 +18,14 @@ export function PuyuhForm({
   onClose,
   isLoading,
 }: PuyuhFormProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const colors = isDark ? DarkTheme.colors : DefaultTheme.colors;
-
   const [ageMonths, setAgeMonths] = useState("");
   const [count, setCount] = useState("");
-  const [status, setStatus] = useState<PuyuhStatus>(PuyuhStatus.ACTIVE);
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const resetForm = () => {
     setAgeMonths("");
     setCount("");
-    setStatus(PuyuhStatus.ACTIVE);
     setNotes("");
     setErrors({});
   };
@@ -65,7 +51,7 @@ export function PuyuhForm({
       await onSubmit({
         age_months: parseInt(ageMonths),
         count: parseInt(count),
-        status,
+        status: PuyuhStatus.ACTIVE,
         notes: notes || undefined,
       });
 
@@ -83,159 +69,106 @@ export function PuyuhForm({
       visible={visible}
       animationType="slide"
       onRequestClose={onClose}
-      transparent={false}
+      presentationStyle="pageSheet"
     >
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.card }]}>
-          <Pressable onPress={onClose}>
-            <Text style={[styles.closeButton, { color: colors.primary }]}>
-              ✕
-            </Text>
-          </Pressable>
-          <Text style={[styles.title, { color: colors.text }]}>
-            Tambah Grup Puyuh
-          </Text>
-          <Pressable onPress={handleSubmit} disabled={isLoading}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <View style={styles.header}>
+          <AnimatedButton style={styles.headerBtn} onPress={onClose}>
+            <Text style={styles.cancelButton}>Batal</Text>
+          </AnimatedButton>
+          <Text style={styles.title}>Tambah Grup Puyuh</Text>
+          <AnimatedButton style={styles.headerBtn} onPress={handleSubmit} disabled={isLoading}>
             <Text
               style={[
                 styles.saveButton,
-                { color: colors.primary, opacity: isLoading ? 0.5 : 1 },
+                { color: C.red, opacity: isLoading ? 0.5 : 1 },
               ]}
             >
-              {isLoading ? "..." : "Simpan"}
+              {isLoading ? "Menyimpan" : "Simpan"}
             </Text>
-          </Pressable>
+          </AnimatedButton>
         </View>
 
-        <ScrollView style={styles.content}>
-          {/* Age */}
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Usia (Bulan)
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  color: colors.text,
-                  borderColor: errors.ageMonths ? "#ff6b6b" : colors.card,
-                },
-              ]}
-              placeholder="0"
-              placeholderTextColor={fadedColor(colors.text)}
-              keyboardType="number-pad"
-              value={ageMonths}
-              onChangeText={(text) => {
-                setAgeMonths(text);
-                if (text && !isNaN(parseInt(text))) {
-                  setErrors({ ...errors, ageMonths: "" });
-                }
-              }}
-            />
-            {errors.ageMonths && (
-              <Text style={styles.errorText}>{errors.ageMonths}</Text>
-            )}
-          </View>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={{ paddingBottom: 60 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.formGroup}>
+            {/* Age */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Usia (Bulan)</Text>
+              <AnimatedInput
+                placeholder="0"
+                keyboardType="number-pad"
+                value={ageMonths}
+                onChangeText={(text) => {
+                  setAgeMonths(text);
+                  if (text && !isNaN(parseInt(text))) {
+                    setErrors({ ...errors, ageMonths: "" });
+                  }
+                }}
+                error={!!errors.ageMonths}
+              />
+              {errors.ageMonths ? (
+                <Text style={styles.errorText}>{errors.ageMonths}</Text>
+              ) : null}
+            </View>
 
-          {/* Count */}
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Jumlah (Ekor)
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  color: colors.text,
-                  borderColor: errors.count ? "#ff6b6b" : colors.card,
-                },
-              ]}
-              placeholder="0"
-              placeholderTextColor={fadedColor(colors.text)}
-              keyboardType="number-pad"
-              value={count}
-              onChangeText={(text) => {
-                setCount(text);
-                if (text && !isNaN(parseInt(text))) {
-                  setErrors({ ...errors, count: "" });
-                }
-              }}
-            />
-            {errors.count && (
-              <Text style={styles.errorText}>{errors.count}</Text>
-            )}
-          </View>
+            {/* Count */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Jumlah (Ekor)</Text>
+              <AnimatedInput
+                placeholder="0"
+                keyboardType="number-pad"
+                value={count}
+                onChangeText={(text) => {
+                  setCount(text);
+                  if (text && !isNaN(parseInt(text))) {
+                    setErrors({ ...errors, count: "" });
+                  }
+                }}
+                error={!!errors.count}
+              />
+              {errors.count ? (
+                <Text style={styles.errorText}>{errors.count}</Text>
+              ) : null}
+            </View>
 
-          {/* Status */}
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.text }]}>Status</Text>
-            <View style={styles.statusRow}>
-              {[
-                { label: "Aktif", value: PuyuhStatus.ACTIVE },
-                { label: "Tidak Aktif", value: PuyuhStatus.INACTIVE },
-                { label: "Sakit", value: PuyuhStatus.SICK },
-              ].map((option) => (
-                <Pressable
-                  key={option.value}
-                  style={[
-                    styles.statusBtn,
-                    {
-                      backgroundColor:
-                        status === option.value ? colors.primary : colors.card,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  onPress={() => setStatus(option.value)}
-                >
-                  <Text
-                    style={{
-                      color: status === option.value ? "white" : colors.text,
-                      fontSize: 12,
-                      fontWeight: "600",
-                    }}
-                  >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              ))}
+            {/* Notes */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Catatan</Text>
+              <AnimatedInput
+                style={styles.textArea}
+                placeholder="Tambahkan informasi tambahan..."
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
             </View>
           </View>
 
-          {/* Notes */}
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Catatan (Opsional)
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                { color: colors.text, borderColor: colors.card },
-              ]}
-              placeholder="Tambahkan informasi tambahan..."
-              placeholderTextColor={fadedColor(colors.text)}
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              numberOfLines={3}
-            />
-          </View>
-
           {/* Reset Button */}
-          <Pressable
+          <AnimatedButton
             style={styles.resetBtn}
             onPress={resetForm}
             disabled={isLoading}
           >
             <Text style={styles.resetBtnText}>🔄 Reset Form</Text>
-          </Pressable>
+          </AnimatedButton>
 
-          {errors.submit && (
-            <Text style={[styles.errorText, { marginHorizontal: 16 }]}>
+          {errors.submit ? (
+            <Text style={[styles.errorText, { textAlign: "center", marginTop: 16 }]}>
               {errors.submit}
             </Text>
-          )}
+          ) : null}
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -243,82 +176,81 @@ export function PuyuhForm({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: C.bg,
   },
   header: {
-    paddingTop: 16,
+    paddingTop: Platform.OS === "ios" ? 16 : 24,
     paddingBottom: 16,
     paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    backgroundColor: C.card,
+  },
+  headerBtn: {
+    minWidth: 60,
+    minHeight: 40,
+    justifyContent: "center",
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "700",
+    color: C.textPrimary,
     flex: 1,
     textAlign: "center",
   },
-  closeButton: {
-    fontSize: 24,
-    padding: 8,
+  cancelButton: {
+    fontSize: 16,
+    color: C.textSecondary,
+    fontWeight: "500",
   },
   saveButton: {
     fontSize: 16,
-    fontWeight: "600",
-    padding: 8,
+    fontWeight: "700",
+    textAlign: "right",
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: S.lg,
+  },
+  formGroup: {
+    backgroundColor: C.card,
+    borderRadius: 24,
+    padding: 20,
+    gap: 24,
+    marginBottom: 24,
+    marginTop: 8,
   },
   field: {
-    marginBottom: 20,
+    gap: 12,
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
+    fontWeight: "700",
+    color: C.textPrimary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  statusRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  statusBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
+  textArea: {
+    minHeight: 100,
   },
   errorText: {
-    color: "#ff6b6b",
-    fontSize: 12,
+    color: C.expense,
+    fontSize: 13,
+    fontWeight: "600",
     marginTop: 4,
   },
   resetBtn: {
-    borderWidth: 1,
-    borderColor: "#2A2A2A",
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center" as const,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    marginTop: 8,
+    borderRadius: 20,
+    paddingVertical: 16,
+    alignItems: "center",
+    backgroundColor: C.card,
   },
   resetBtnText: {
-    color: "#9E9E9E",
-    fontSize: 14,
-    fontWeight: "600" as const,
+    color: C.textSecondary,
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

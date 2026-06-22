@@ -1,33 +1,27 @@
 import { C, S } from "@/constants/theme";
 import { useFinanceStore } from "@/stores/financeStore";
 import { formatCurrency } from "@/utils/format";
+import { useRouter } from "expo-router";
 import { useEffect } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, SafeAreaView, StatusBar, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { ThemeText as Text } from "@/components/ui/ThemeText";
 
 export default function IncomeListScreen() {
   const {
     incomeTransactions,
     isLoading,
     error,
+    currentMonth,
     loadFinanceData,
     deleteTransaction,
   } = useFinanceStore();
 
+  const router = useRouter();
+
   useEffect(() => {
-    const now = new Date();
-    loadFinanceData(now.getFullYear(), now.getMonth() + 1);
-  }, [loadFinanceData]);
+    loadFinanceData(currentMonth.year, currentMonth.month);
+  }, [loadFinanceData, currentMonth.year, currentMonth.month]);
 
   const handleDelete = (id: string, category: string, amount: number) => {
     Alert.alert(
@@ -50,6 +44,9 @@ export default function IncomeListScreen() {
 
       {/* Header - Transparent */}
       <Animated.View entering={FadeInDown.duration(400).delay(100)} style={ls.header}>
+        <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}>
+          <Text style={{ color: C.textSecondary, fontSize: 16, fontWeight: "600" }}>← Kembali</Text>
+        </Pressable>
         <Text style={ls.headerSub}>Riwayat</Text>
         <Text style={ls.headerTitle}>Pendapatan</Text>
       </Animated.View>
@@ -60,7 +57,6 @@ export default function IncomeListScreen() {
         </View>
       ) : (
         <Animated.FlatList
-          entering={FadeInDown.duration(400).delay(200)}
           data={incomeTransactions}
           keyExtractor={(item) => item.id}
           contentContainerStyle={ls.listContent}

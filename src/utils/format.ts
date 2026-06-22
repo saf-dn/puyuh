@@ -1,3 +1,5 @@
+import { differenceInMonths, differenceInDays, addMonths } from "date-fns";
+
 // ─── Date Helpers ────────────────────────────────────────────────
 
 export function getCurrentDate(): string {
@@ -33,6 +35,29 @@ export function getDateRange(year: number, month: number) {
 
 export function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
+}
+
+export function calculateAge(initialAgeMonths: number, createdAt: string): string {
+  const startDate = new Date(createdAt);
+  startDate.setHours(0, 0, 0, 0);
+  
+  const endDate = new Date();
+  endDate.setHours(0, 0, 0, 0);
+  
+  if (endDate < startDate) {
+    return `${initialAgeMonths} bulan`;
+  }
+  
+  const elapsedMonths = differenceInMonths(endDate, startDate);
+  const dateAfterMonths = addMonths(startDate, elapsedMonths);
+  const elapsedDays = differenceInDays(endDate, dateAfterMonths);
+  
+  const totalMonths = initialAgeMonths + elapsedMonths;
+  
+  if (elapsedDays === 0) {
+    return `${totalMonths} bulan`;
+  }
+  return `${totalMonths} bulan ${elapsedDays} hari`;
 }
 
 // ─── Number / Currency Helpers ───────────────────────────────────

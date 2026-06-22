@@ -1,23 +1,15 @@
 import FeedForm from "@/components/forms/FeedForm";
 import ProductionForm from "@/components/forms/ProductionForm";
 import { PuyuhForm } from "@/components/forms/PuyuhForm";
+import { ThemeText as Text } from "@/components/ui/ThemeText";
 import { C, S } from "@/constants/theme";
 import { useFeedStore } from "@/stores/feedStore";
 import { useProductionStore } from "@/stores/productionStore";
 import { usePuyuhStore } from "@/stores/puyuhStore";
 import { DailyFeed } from "@/types";
-import { formatNumber } from "@/utils/format";
+import { calculateAge, formatNumber } from "@/utils/format";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 function getLatestFeedByPuyuh(
@@ -138,7 +130,7 @@ export default function PuyuhScreen() {
     () =>
       puyuhGroups.map((g) => ({
         id: g.id,
-        name: `Usia ${g.age_months} bln (${formatNumber(g.count)} ekor)`,
+        name: `Usia ${calculateAge(g.age_months, g.created_at)} (${formatNumber(g.count)} ekor)`,
         count: g.count,
       })),
     [puyuhGroups],
@@ -278,6 +270,11 @@ export default function PuyuhScreen() {
                     : item.status === "sick"
                       ? C.expense
                       : C.textSecondary;
+                
+                const statusLabel = 
+                  item.status === "active" ? "Sehat" :
+                  item.status === "inactive" ? "Mati" :
+                  item.status === "sick" ? "Sakit" : item.status;
                 return (
                   <Animated.View
                     entering={FadeInDown.duration(400).delay(600 + idx * 100)}
@@ -287,7 +284,7 @@ export default function PuyuhScreen() {
                     <View style={sc.groupTop}>
                       <View style={sc.groupMeta}>
                         <Text style={sc.groupAge}>
-                          Usia {item.age_months} bulan
+                          Usia {calculateAge(item.age_months, item.created_at)}
                         </Text>
                         <View
                           style={[
@@ -302,7 +299,7 @@ export default function PuyuhScreen() {
                             ]}
                           />
                           <Text style={[sc.statusText, { color: statusColor }]}>
-                            {item.status}
+                            {statusLabel}
                           </Text>
                         </View>
                       </View>

@@ -1,18 +1,8 @@
-import { fadedColor } from "@/constants/theme";
-import { DarkTheme, DefaultTheme } from "expo-router";
+import { ThemeText as Text } from "@/components/ui/ThemeText";
+import { C, S } from "@/constants/theme";
 import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  useColorScheme,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { AnimatedButton, AnimatedInput } from "../ui/AnimatedMicro";
 
 interface Option {
   id: string;
@@ -37,16 +27,14 @@ function ChipSelect({
   options,
   selectedId,
   onSelect,
-  colors,
 }: {
   options: Option[];
   selectedId: string;
   onSelect: (id: string) => void;
-  colors: (typeof DarkTheme)["colors"];
 }) {
   if (options.length === 0) {
     return (
-      <Text style={{ color: colors.text, opacity: 0.6, fontSize: 13 }}>
+      <Text style={{ color: C.textMuted, fontSize: 13, fontWeight: "500" }}>
         Tidak ada pilihan tersedia
       </Text>
     );
@@ -57,27 +45,23 @@ function ChipSelect({
       {options.map((option) => {
         const selected = selectedId === option.id;
         return (
-          <Pressable
+          <AnimatedButton
             key={option.id}
             style={[
               styles.chip,
-              {
-                backgroundColor: selected ? colors.primary : colors.card,
-                borderColor: selected ? colors.primary : colors.border,
-              },
+              selected && { backgroundColor: "#1565C0" },
             ]}
             onPress={() => onSelect(option.id)}
           >
             <Text
-              style={{
-                color: selected ? "white" : colors.text,
-                fontSize: 12,
-                fontWeight: "600",
-              }}
+              style={[
+                styles.chipText,
+                selected && { color: C.white, fontWeight: "700" },
+              ]}
             >
               {option.name}
             </Text>
-          </Pressable>
+          </AnimatedButton>
         );
       })}
     </View>
@@ -92,10 +76,6 @@ export default function FeedForm({
   feedTypes,
   loading = false,
 }: FeedFormProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const colors = isDark ? DarkTheme.colors : DefaultTheme.colors;
-
   const [formData, setFormData] = useState({
     puyuhGroupId: puyuhGroups[0]?.id || "",
     feedTypeId: feedTypes[0]?.id || "",
@@ -118,13 +98,7 @@ export default function FeedForm({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.puyuhGroupId) {
-      newErrors.puyuhGroupId = "Pilih kelompok puyuh";
-    }
 
-    if (!formData.feedTypeId) {
-      newErrors.feedTypeId = "Pilih jenis pakan";
-    }
 
     if (!formData.frequencyPerDay.trim()) {
       newErrors.frequencyPerDay = "Frekuensi pemberian harus diisi";
@@ -170,170 +144,107 @@ export default function FeedForm({
     onClose();
   };
 
-  const selectedGroup = puyuhGroups.find((g) => g.id === formData.puyuhGroupId);
-  const totalAmountPerDay = selectedGroup
-    ? ((Number(formData.amountPerBird) || 0) *
-        (Number(formData.frequencyPerDay) || 0) *
-        selectedGroup.count) /
-      1000
-    : 0;
+  const totalPuyuh = puyuhGroups.reduce((sum, g) => sum + g.count, 0);
+  const totalAmountPerDay = ((Number(formData.amountPerBird) || 0) *
+    (Number(formData.frequencyPerDay) || 0) *
+    totalPuyuh) /
+    1000;
 
   return (
     <Modal
       visible={visible}
       animationType="slide"
       onRequestClose={handleClose}
-      transparent={true}
+      presentationStyle="pageSheet"
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Pressable onPress={handleClose}>
-            <Text style={{ color: colors.primary, fontSize: 16 }}>Batal</Text>
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            Pemberian Pakan Hari Ini
-          </Text>
-          <Pressable onPress={handleSubmit} disabled={loading}>
+        <View style={styles.header}>
+          <AnimatedButton style={styles.headerBtn} onPress={handleClose}>
+            <Text style={styles.cancelButton}>Batal</Text>
+          </AnimatedButton>
+          <Text style={styles.title}>Catat Pakan</Text>
+          <AnimatedButton style={styles.headerBtn} onPress={handleSubmit} disabled={loading}>
             <Text
-              style={{ color: colors.primary, fontSize: 16, fontWeight: "600" }}
+              style={[
+                styles.saveButton,
+                { color: "#1565C0", opacity: loading ? 0.5 : 1 },
+              ]}
             >
-              {loading ? "Simpan..." : "Simpan"}
+              {loading ? "Menyimpan" : "Simpan"}
             </Text>
-          </Pressable>
+          </AnimatedButton>
         </View>
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          style={styles.content}
+          contentContainerStyle={{ paddingBottom: 60 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Data Pakan
-            </Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Kelompok Puyuh *
+          <View style={styles.formGroup}>
+            <View style={styles.field}>
+              <Text style={styles.label}>Total Puyuh</Text>
+              <Text style={{ fontSize: 16, color: C.textPrimary, fontWeight: "600", marginTop: 4 }}>
+                {totalPuyuh} ekor
               </Text>
-              <ChipSelect
-                options={puyuhGroups}
-                selectedId={formData.puyuhGroupId}
-                onSelect={(id) =>
-                  setFormData({ ...formData, puyuhGroupId: id })
-                }
-                colors={colors}
-              />
-              {errors.puyuhGroupId && (
-                <Text style={styles.errorText}>{errors.puyuhGroupId}</Text>
-              )}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Jenis Pakan *
-              </Text>
-              <ChipSelect
-                options={feedTypes}
-                selectedId={formData.feedTypeId}
-                onSelect={(id) => setFormData({ ...formData, feedTypeId: id })}
-                colors={colors}
-              />
-              {errors.feedTypeId && (
-                <Text style={styles.errorText}>{errors.feedTypeId}</Text>
-              )}
-            </View>
+            <View style={styles.field}>
+              <Text style={styles.label}>Frekuensi per Hari *</Text>
+              <AnimatedInput
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Frekuensi Pemberian per Hari *
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.card,
-                    color: colors.text,
-                    borderColor: errors.frequencyPerDay
-                      ? "#C62828"
-                      : colors.border,
-                  },
-                ]}
-                placeholder="Contoh: 3"
-                placeholderTextColor={fadedColor(colors.text)}
                 keyboardType="decimal-pad"
                 value={formData.frequencyPerDay}
                 onChangeText={(text) =>
                   setFormData({ ...formData, frequencyPerDay: text })
                 }
                 editable={!loading}
+                error={!!errors.frequencyPerDay}
               />
-              {errors.frequencyPerDay && (
+              {errors.frequencyPerDay ? (
                 <Text style={styles.errorText}>{errors.frequencyPerDay}</Text>
-              )}
+              ) : null}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Jumlah Pakan per Ekor (gram) *
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.card,
-                    color: colors.text,
-                    borderColor: errors.amountPerBird
-                      ? "#C62828"
-                      : colors.border,
-                  },
-                ]}
+            <View style={styles.field}>
+              <Text style={styles.label}>Jumlah Pakan per Ekor (g) *</Text>
+              <AnimatedInput
                 placeholder="Contoh: 25"
-                placeholderTextColor={fadedColor(colors.text)}
                 keyboardType="decimal-pad"
                 value={formData.amountPerBird}
                 onChangeText={(text) =>
                   setFormData({ ...formData, amountPerBird: text })
                 }
                 editable={!loading}
+                error={!!errors.amountPerBird}
               />
-              {errors.amountPerBird && (
+              {errors.amountPerBird ? (
                 <Text style={styles.errorText}>{errors.amountPerBird}</Text>
-              )}
+              ) : null}
             </View>
+          </View>
 
-            <View
-              style={[
-                styles.summaryBox,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: colors.text }]}>
-                  Total Pakan per Hari:
-                </Text>
-                <Text style={[styles.summaryValue, { color: colors.text }]}>
-                  {totalAmountPerDay.toFixed(2)} kg
-                </Text>
-              </View>
-              <Text style={[styles.summaryNote, { color: colors.text }]}>
-                {selectedGroup
-                  ? `${selectedGroup.count} ekor × ${formData.amountPerBird || 0}g × ${formData.frequencyPerDay || 0}x`
-                  : "Pilih kelompok terlebih dahulu"}
+          <View style={styles.summaryBox}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Total Pakan per Hari:</Text>
+              <Text style={styles.summaryValue}>
+                {totalAmountPerDay.toFixed(2)} kg
               </Text>
             </View>
-
-            {/* Reset Button */}
-            <Pressable
-              style={[styles.resetBtn, { borderColor: colors.border }]}
-              onPress={resetForm}
-              disabled={loading}
-            >
-              <Text style={styles.resetBtnText}>🔄 Reset Form</Text>
-            </Pressable>
+            <Text style={styles.summaryNote}>
+              {`${totalPuyuh} ekor × ${formData.amountPerBird || 0}g × ${formData.frequencyPerDay || 0}x`}
+            </Text>
           </View>
+
+          <AnimatedButton
+            style={styles.resetBtn}
+            onPress={resetForm}
+            disabled={loading}
+          >
+            <Text style={styles.resetBtnText}>🔄 Reset Form</Text>
+          </AnimatedButton>
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
@@ -341,57 +252,124 @@ export default function FeedForm({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
   header: {
+    paddingTop: Platform.OS === "ios" ? 16 : 24,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
     borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    backgroundColor: C.card,
   },
-  headerTitle: { fontSize: 18, fontWeight: "700" },
-  scrollContent: { padding: 16, gap: 20 },
-  section: { gap: 12 },
-  sectionTitle: { fontSize: 14, fontWeight: "600", marginBottom: 8 },
-  inputGroup: { gap: 8 },
-  label: { fontSize: 13, fontWeight: "600" },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+  headerBtn: {
+    minWidth: 60,
+    minHeight: 40,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: C.textPrimary,
+    flex: 1,
+    textAlign: "center",
+  },
+  cancelButton: {
+    fontSize: 16,
+    color: C.textSecondary,
+    fontWeight: "500",
+  },
+  saveButton: {
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "right",
+  },
+  content: {
+    flex: 1,
+    padding: S.lg,
+  },
+  formGroup: {
+    backgroundColor: C.card,
+    borderRadius: 24,
+    padding: 20,
+    gap: 24,
+    marginBottom: 24,
+    marginTop: 8,
+  },
+  field: {
+    gap: 12,
+  },
+  label: {
     fontSize: 14,
+    fontWeight: "700",
+    color: C.textPrimary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: C.card2,
+    alignItems: "center",
   },
-  errorText: { color: "#C62828", fontSize: 12, fontWeight: "500" },
-  summaryBox: { borderWidth: 1, borderRadius: 8, padding: 12, marginTop: 8 },
+  chipText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: C.textSecondary,
+  },
+  errorText: {
+    color: C.expense,
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  summaryBox: {
+    backgroundColor: C.card2,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+  },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  summaryLabel: { fontSize: 13, fontWeight: "600" },
-  summaryValue: { fontSize: 14, fontWeight: "700" },
-  summaryNote: { fontSize: 11, marginTop: 4, opacity: 0.7 },
+  summaryLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: C.textSecondary,
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: C.textPrimary,
+  },
+  summaryNote: {
+    fontSize: 13,
+    marginTop: 8,
+    color: C.textMuted,
+    fontWeight: "500",
+  },
   resetBtn: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center" as const,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    marginTop: 12,
+    borderRadius: 20,
+    paddingVertical: 16,
+    alignItems: "center",
+    backgroundColor: C.card,
   },
   resetBtnText: {
-    color: "#9E9E9E",
-    fontSize: 14,
-    fontWeight: "600" as const,
+    color: C.textSecondary,
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

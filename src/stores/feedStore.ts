@@ -28,7 +28,9 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
 
   loadFeeds: async (year: number, month: number) => {
     try {
-      set({ isLoading: true, error: null });
+      const hasData = get().feeds.length > 0;
+      if (!hasData) set({ isLoading: true, error: null });
+      else set({ error: null });
       const { start, end } = getDateRange(year, month);
       const today = new Date().toISOString().split("T")[0];
 

@@ -28,7 +28,10 @@ export const usePuyuhStore = create<PuyuhState>((set, get) => ({
   totalPuyuh: 0,
 
   loadPuyuh: async () => {
-    set({ isLoading: true, error: null });
+    const hasData = get().puyuhGroups.length > 0;
+    if (!hasData) set({ isLoading: true, error: null });
+    else set({ error: null });
+    
     try {
       const [puyuhs, total] = await Promise.all([
         PuyuhQueries.getAll(),

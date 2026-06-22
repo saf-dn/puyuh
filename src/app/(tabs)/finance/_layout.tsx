@@ -22,7 +22,7 @@ export default function FinanceLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "Menu Keuangan",
+          title: "Keuangan",
         }}
       />
       <Stack.Screen

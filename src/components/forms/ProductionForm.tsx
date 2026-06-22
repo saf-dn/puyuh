@@ -1,19 +1,9 @@
-import { fadedColor } from "@/constants/theme";
+import { C, S } from "@/constants/theme";
 import { formatCurrency } from "@/utils/format";
-import { DarkTheme, DefaultTheme } from "expo-router";
 import { useState } from "react";
-import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    useColorScheme,
-    View,
-} from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { AnimatedButton, AnimatedInput } from "../ui/AnimatedMicro";
+import { ThemeText as Text } from "@/components/ui/ThemeText";
 
 const PRICE_PER_EGG = 400;
 
@@ -36,10 +26,6 @@ export default function ProductionForm({
   onSubmit,
   loading = false,
 }: ProductionFormProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const colors = isDark ? DarkTheme.colors : DefaultTheme.colors;
-
   const [formData, setFormData] = useState({
     eggsProduced: "",
     eggsBroken: "",
@@ -141,208 +127,144 @@ export default function ProductionForm({
       visible={visible}
       animationType="slide"
       onRequestClose={handleClose}
-      transparent={true}
+      presentationStyle="pageSheet"
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Pressable onPress={handleClose}>
-            <Text style={{ color: colors.primary, fontSize: 16 }}>Batal</Text>
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            Produksi Telur Hari Ini
-          </Text>
-          <Pressable onPress={handleSubmit} disabled={loading}>
+        <View style={styles.header}>
+          <AnimatedButton style={styles.headerBtn} onPress={handleClose}>
+            <Text style={styles.cancelButton}>Batal</Text>
+          </AnimatedButton>
+          <Text style={styles.title}>Catat Produksi</Text>
+          <AnimatedButton style={styles.headerBtn} onPress={handleSubmit} disabled={loading}>
             <Text
-              style={{ color: colors.primary, fontSize: 16, fontWeight: "600" }}
+              style={[
+                styles.saveButton,
+                { color: "#2E7D32", opacity: loading ? 0.5 : 1 },
+              ]}
             >
-              {loading ? "Simpan..." : "Simpan"}
+              {loading ? "Menyimpan" : "Simpan"}
             </Text>
-          </Pressable>
+          </AnimatedButton>
         </View>
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          style={styles.content}
+          contentContainerStyle={{ paddingBottom: 60 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Data Produksi
-            </Text>
-
-            {/* Info harga per telur */}
-            <View
-              style={[
-                styles.priceInfoBox,
-                { backgroundColor: "#1B3A1F", borderColor: "#2E7D32" },
-              ]}
-            >
+          {/* Info harga per telur - Premium Banner */}
+          <View style={styles.priceInfoBox}>
+            <View style={styles.priceInfoIconBox}>
+              <Text style={{ fontSize: 24 }}>💰</Text>
+            </View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.priceInfoText}>
-                💰 Harga per telur: {formatCurrency(PRICE_PER_EGG)}
+                Harga per telur: {formatCurrency(PRICE_PER_EGG)}
               </Text>
               <Text style={styles.priceInfoSub}>
                 Pemasukan otomatis tercatat saat telur terjual
               </Text>
             </View>
+          </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Jumlah Telur Dihasilkan *
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.card,
-                    color: colors.text,
-                    borderColor: errors.eggsProduced
-                      ? "#C62828"
-                      : colors.border,
-                  },
-                ]}
-                placeholder="Masukkan jumlah telur"
-                placeholderTextColor={fadedColor(colors.text)}
+          <View style={styles.formGroup}>
+            <View style={styles.field}>
+              <Text style={styles.label}>Telur Dihasilkan *</Text>
+              <AnimatedInput
+                placeholder="0"
                 keyboardType="decimal-pad"
                 value={formData.eggsProduced}
                 onChangeText={(text) =>
                   setFormData({ ...formData, eggsProduced: text })
                 }
                 editable={!loading}
+                error={!!errors.eggsProduced}
               />
-              {errors.eggsProduced && (
+              {errors.eggsProduced ? (
                 <Text style={styles.errorText}>{errors.eggsProduced}</Text>
-              )}
+              ) : null}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Jumlah Telur Pecah *
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.card,
-                    color: colors.text,
-                    borderColor: errors.eggsBroken ? "#C62828" : colors.border,
-                  },
-                ]}
-                placeholder="Masukkan jumlah telur pecah"
-                placeholderTextColor={fadedColor(colors.text)}
+            <View style={styles.field}>
+              <Text style={styles.label}>Telur Pecah *</Text>
+              <AnimatedInput
+                placeholder="0"
                 keyboardType="decimal-pad"
                 value={formData.eggsBroken}
                 onChangeText={(text) =>
                   setFormData({ ...formData, eggsBroken: text })
                 }
                 editable={!loading}
+                error={!!errors.eggsBroken}
               />
-              {errors.eggsBroken && (
+              {errors.eggsBroken ? (
                 <Text style={styles.errorText}>{errors.eggsBroken}</Text>
-              )}
+              ) : null}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Jumlah Telur Terjual *
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.card,
-                    color: colors.text,
-                    borderColor: errors.eggsSold ? "#C62828" : colors.border,
-                  },
-                ]}
-                placeholder="Masukkan jumlah telur terjual"
-                placeholderTextColor={fadedColor(colors.text)}
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: C.income }]}>Telur Terjual *</Text>
+              <AnimatedInput
+                placeholder="0"
                 keyboardType="decimal-pad"
                 value={formData.eggsSold}
                 onChangeText={(text) =>
                   setFormData({ ...formData, eggsSold: text })
                 }
                 editable={!loading}
+                error={!!errors.eggsSold}
               />
-              {errors.eggsSold && (
+              {errors.eggsSold ? (
                 <Text style={styles.errorText}>{errors.eggsSold}</Text>
-              )}
+              ) : null}
             </View>
 
-            <View
-              style={[
-                styles.summaryBox,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: colors.text }]}>
-                  Telur Belum Dijual:
-                </Text>
-                <Text style={[styles.summaryValue, { color: colors.text }]}>
-                  {eggsAvailable} pcs
-                </Text>
-              </View>
-              <View style={[styles.summaryRow, { marginTop: 8 }]}>
-                <Text style={[styles.summaryLabel, { color: colors.text }]}>
-                  Harga per Telur:
-                </Text>
-                <Text style={[styles.summaryValue, { color: colors.text }]}>
-                  {formatCurrency(PRICE_PER_EGG)}
-                </Text>
-              </View>
-              <View style={[styles.summaryRow, { marginTop: 8 }]}>
-                <Text style={[styles.summaryLabel, { color: colors.text }]}>
-                  Total Pemasukan:
-                </Text>
-                <Text style={[styles.summaryValue, { color: "#2E7D32" }]}>
-                  {formatCurrency(estimatedRevenue)}
-                </Text>
-              </View>
-              {Number(formData.eggsSold) > 0 && (
-                <Text style={styles.autoIncomeNote}>
-                  ✅ Pemasukan akan otomatis tercatat di Keuangan
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Jumlah Puyuh Mati *
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.card,
-                    color: colors.text,
-                    borderColor: errors.puyuhDied ? "#C62828" : colors.border,
-                  },
-                ]}
-                placeholder="Masukkan jumlah puyuh mati"
-                placeholderTextColor={fadedColor(colors.text)}
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: C.expense }]}>Puyuh Mati *</Text>
+              <AnimatedInput
+                placeholder="0"
                 keyboardType="decimal-pad"
                 value={formData.puyuhDied}
                 onChangeText={(text) =>
                   setFormData({ ...formData, puyuhDied: text })
                 }
                 editable={!loading}
+                error={!!errors.puyuhDied}
               />
-              {errors.puyuhDied && (
+              {errors.puyuhDied ? (
                 <Text style={styles.errorText}>{errors.puyuhDied}</Text>
-              )}
+              ) : null}
             </View>
           </View>
 
-          {/* Reset Button */}
-          <Pressable
-            style={[styles.resetBtn, { borderColor: colors.border }]}
+          <View style={styles.summaryBox}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Telur Belum Dijual</Text>
+              <Text style={styles.summaryValue}>{eggsAvailable} pcs</Text>
+            </View>
+            <View style={[styles.summaryRow, { marginTop: 12 }]}>
+              <Text style={styles.summaryLabel}>Total Pemasukan</Text>
+              <Text style={[styles.summaryValue, { color: C.income, fontSize: 18 }]}>
+                {formatCurrency(estimatedRevenue)}
+              </Text>
+            </View>
+            {Number(formData.eggsSold) > 0 && (
+              <Text style={styles.autoIncomeNote}>
+                ✅ Pemasukan akan otomatis tercatat di Keuangan
+              </Text>
+            )}
+          </View>
+
+          <AnimatedButton
+            style={styles.resetBtn}
             onPress={resetForm}
             disabled={loading}
           >
             <Text style={styles.resetBtnText}>🔄 Reset Form</Text>
-          </Pressable>
+          </AnimatedButton>
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
@@ -352,72 +274,102 @@ export default function ProductionForm({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: C.bg,
   },
   header: {
+    paddingTop: Platform.OS === "ios" ? 16 : 24,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
     borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    backgroundColor: C.card,
   },
-  headerTitle: {
-    fontSize: 18,
+  headerBtn: {
+    minWidth: 60,
+    minHeight: 40,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 17,
     fontWeight: "700",
+    color: C.textPrimary,
+    flex: 1,
+    textAlign: "center",
   },
-  scrollContent: {
-    padding: 16,
-    gap: 20,
-  },
-  section: {
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 14,
-  },
-  errorText: {
-    color: "#C62828",
-    fontSize: 12,
+  cancelButton: {
+    fontSize: 16,
+    color: C.textSecondary,
     fontWeight: "500",
   },
+  saveButton: {
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "right",
+  },
+  content: {
+    flex: 1,
+    padding: S.lg,
+  },
   priceInfoBox: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    gap: 4,
+    backgroundColor: "#1B3A1F",
+    borderRadius: 20,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 24,
+    marginTop: 8,
+  },
+  priceInfoIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   priceInfoText: {
     color: "#4CAF50",
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 4,
   },
   priceInfoSub: {
     color: "#81C784",
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: "500",
   },
+  formGroup: {
+    backgroundColor: C.card,
+    borderRadius: 24,
+    padding: 20,
+    gap: 24,
+    marginBottom: 24,
+  },
+  field: {
+    gap: 12,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: C.textPrimary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  errorText: {
+    color: C.expense,
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 4,
+  },
   summaryBox: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 8,
+    backgroundColor: C.card2,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
   },
   summaryRow: {
     flexDirection: "row",
@@ -425,30 +377,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   summaryLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
+    color: C.textSecondary,
   },
   summaryValue: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "800",
+    color: C.textPrimary,
   },
   autoIncomeNote: {
     color: "#4CAF50",
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 10,
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 16,
     textAlign: "center",
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    paddingVertical: 10,
+    borderRadius: 12,
   },
   resetBtn: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 14,
+    borderRadius: 20,
+    paddingVertical: 16,
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: C.card,
   },
   resetBtnText: {
-    color: "#9E9E9E",
-    fontSize: 14,
-    fontWeight: "600",
+    color: C.textSecondary,
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

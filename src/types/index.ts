@@ -183,6 +183,7 @@ export interface PuyuhSummary {
   age_months: number;
   count: number;
   status: PuyuhStatus;
+  created_at: string;
 }
 
 export interface DailySummary {
