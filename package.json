@@ -49,6 +49,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "build": "expo export --platform web",
     "lint": "expo lint",
     "smoke-test": "node scripts/smoke-test.mjs",
     "export:web": "expo export --platform web",
