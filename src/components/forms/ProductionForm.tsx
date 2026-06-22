@@ -66,7 +66,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
         </div>
 
         <div className="form-group">
-          <label className="form-label">Total Dihasilkan (butir)</label>
+          <label className="form-label">Total Dihasilkan</label>
           <input
             type="number"
             className="form-input"
@@ -105,7 +105,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
         </div>
 
         <div className="form-group">
-          <label className="form-label">Harga per Butir (Rp)</label>
+          <label className="form-label">Harga per Butir</label>
           <input
             type="number"
             className="form-input"
@@ -117,16 +117,16 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
         {error && <div className="form-error">{error}</div>}
 
         <div className="form-actions">
-          <button 
-            type="button" 
-            className="btn glass-panel" 
+          <button
+            type="button"
+            className="btn glass-panel"
             onClick={onClose}
             disabled={isLoading}
           >
             Batal
           </button>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn btn-primary"
             style={{ backgroundColor: '#2E7D32' }}
             disabled={isLoading}

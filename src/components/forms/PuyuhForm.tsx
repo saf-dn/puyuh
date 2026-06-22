@@ -39,7 +39,7 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading }: Puyu
         status: status as PuyuhStatus,
         notes: notes.trim() || undefined,
       });
-      
+
       // Reset form
       setCount('');
       setAgeMonths('');
@@ -52,58 +52,58 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading }: Puyu
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Tambah Kelompok Puyuh">
+    <Modal isOpen={isOpen} onClose={onClose} title="Tambah Puyuh">
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label className="form-label">Jumlah (ekor)</label>
+          <label className="form-label">Jumlah</label>
           <input
             type="number"
             className="form-input"
             value={count}
             onChange={(e) => setCount(e.target.value)}
-            placeholder="Contoh: 1000"
+            placeholder=".."
             required
             min="1"
           />
         </div>
 
         <div className="form-group">
-          <label className="form-label">Usia Awal (bulan)</label>
+          <label className="form-label">Usia Awal </label>
           <input
             type="number"
             className="form-input"
             value={ageMonths}
             onChange={(e) => setAgeMonths(e.target.value)}
-            placeholder="Contoh: 1"
+            placeholder=".."
             required
             min="0"
           />
         </div>
 
         <div className="form-group">
-          <label className="form-label">Catatan (opsional)</label>
+          <label className="form-label">Catatan </label>
           <input
             type="text"
             className="form-input"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Contoh: Kandang A, Rak 2"
+            placeholder=".."
           />
         </div>
 
         {error && <div className="form-error">{error}</div>}
 
         <div className="form-actions">
-          <button 
-            type="button" 
-            className="btn glass-panel" 
+          <button
+            type="button"
+            className="btn glass-panel"
             onClick={onClose}
             disabled={isLoading}
           >
             Batal
           </button>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn btn-primary"
             disabled={isLoading}
           >

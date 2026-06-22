@@ -54,9 +54,9 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
       title={`Catat ${isIncome ? 'Pendapatan' : 'Pengeluaran'}`}
     >
       <form onSubmit={handleSubmit}>
@@ -86,7 +86,7 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
 
         <div className="form-group">
           <label className="form-label">Kategori</label>
-          <select 
+          <select
             className="form-select"
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
@@ -100,7 +100,7 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
         </div>
 
         <div className="form-group">
-          <label className="form-label">Keterangan (opsional)</label>
+          <label className="form-label">Keterangan</label>
           <input
             type="text"
             className="form-input"
@@ -113,16 +113,16 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
         {error && <div className="form-error">{error}</div>}
 
         <div className="form-actions">
-          <button 
-            type="button" 
-            className="btn glass-panel" 
+          <button
+            type="button"
+            className="btn glass-panel"
             onClick={onClose}
             disabled={isLoading}
           >
             Batal
           </button>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={`btn ${isIncome ? 'btn-primary' : 'btn-danger'}`}
             style={isIncome ? { backgroundColor: '#10B981' } : undefined}
             disabled={isLoading}
