@@ -40,6 +40,7 @@
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~56.0.4",
+    "gh-pages": "^6.3.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -50,7 +51,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "smoke-test": "node scripts/smoke-test.mjs",
-    "export:web": "expo export --platform web"
+    "export:web": "expo export --platform web",
+    "predeploy": "npm run export:web && type NUL > dist\\.nojekyll",
+    "deploy": "gh-pages -d dist -t"
   },
   "private": true
 }
