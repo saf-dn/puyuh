@@ -32,9 +32,9 @@ export default function IncomePage() {
         </div>
       </header>
 
-      <section className="hero-card glass-panel fade-in-up" style={{ padding: '1.5rem' }}>
-        <p className="hero-label">Total Pendapatan</p>
-        <h2 className="hero-amount text-success" style={{ fontSize: '2rem' }}>
+      <section className="hero-card glass-panel fade-in-up" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.02) 100%)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+        <p className="hero-label" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Total Pendapatan</p>
+        <h2 className="hero-amount text-white" style={{ fontSize: '2rem' }}>
           +{formatCurrency(total)}
         </h2>
       </section>

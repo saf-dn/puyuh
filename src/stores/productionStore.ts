@@ -29,6 +29,7 @@ interface ProductionStore {
     puyuhDied: number;
     pricePerEgg: number;
   }) => Promise<void>;
+  recordDeadPuyuh: (count: number) => Promise<void>;
   clearError: () => void;
 }
 
@@ -71,7 +72,9 @@ export const useProductionStore = create<ProductionStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       const today = new Date();
-      const date = today.toISOString().split("T")[0];
+      const offset = today.getTimezoneOffset() * 60000;
+      const localDate = new Date(today.getTime() - offset);
+      const date = localDate.toISOString().split("T")[0];
 
       // Save production data
       await ProductionQueries.create({
@@ -102,6 +105,30 @@ export const useProductionStore = create<ProductionStore>((set, get) => ({
       const message = storeError(error, "Gagal mencatat produksi");
       set({ error: message, isLoading: false });
       throw new Error(message);
+    }
+  },
+
+  recordDeadPuyuh: async (count) => {
+    try {
+      const today = new Date();
+      const offset = today.getTimezoneOffset() * 60000;
+      const localDate = new Date(today.getTime() - offset);
+      const date = localDate.toISOString().split("T")[0];
+      const existing = await ProductionQueries.getByDate(date);
+      if (existing) {
+        await ProductionQueries.update(existing.id, {
+          puyuh_died_count: (existing.puyuh_died_count || 0) + count,
+        });
+      } else {
+        await ProductionQueries.create({
+          date,
+          eggs_produced_count: 0,
+          puyuh_died_count: count,
+        });
+      }
+      await get().loadProductions(today.getFullYear(), today.getMonth() + 1);
+    } catch (error) {
+      console.error("Gagal mencatat puyuh mati:", error);
     }
   },
 

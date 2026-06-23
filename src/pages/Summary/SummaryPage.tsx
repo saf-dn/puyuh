@@ -129,7 +129,7 @@ export default function SummaryPage() {
             {s.puyuh_by_age.map((g) => (
               <InfoRow
                 key={`${g.age_months}-${g.status}-${g.created_at}`}
-                label={`Usia ${calculateAge(g.age_months, g.created_at)} (${g.status})`}
+                label={`Usia ${calculateAge(g.age_months, g.created_at)}`}
                 value={`${formatNumber(g.count)} ekor`}
               />
             ))}

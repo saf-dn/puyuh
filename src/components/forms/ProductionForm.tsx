@@ -54,64 +54,76 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Catat Produksi Telur">
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label className="form-label">Tanggal</label>
-          <input
-            type="date"
-            className="form-input"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Total Dihasilkan</label>
-          <input
-            type="number"
-            className="form-input"
-            value={produced}
-            onChange={(e) => setProduced(e.target.value)}
-            placeholder="0"
-            required
-            min="1"
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <div className="form-group" style={{ flex: 1 }}>
-            <label className="form-label">Telur Pecah</label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <label className="form-label">📅 Tanggal</label>
             <input
-              type="number"
+              type="date"
               className="form-input"
-              value={broken}
-              onChange={(e) => setBroken(e.target.value)}
-              placeholder="0"
-              min="0"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
             />
           </div>
 
-          <div className="form-group" style={{ flex: 1 }}>
-            <label className="form-label">Telur Terjual</label>
-            <input
-              type="number"
-              className="form-input"
-              value={sold}
-              onChange={(e) => setSold(e.target.value)}
-              placeholder="0"
-              min="0"
-            />
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <label className="form-label">🥚 Total Dihasilkan</label>
+            <div className="input-with-suffix">
+              <input
+                type="number"
+                className="form-input"
+                value={produced}
+                onChange={(e) => setProduced(e.target.value)}
+                placeholder="0"
+                required
+                min="1"
+              />
+              <span className="input-suffix">butir</span>
+            </div>
           </div>
-        </div>
 
-        <div className="form-group">
-          <label className="form-label">Harga per Butir</label>
-          <input
-            type="number"
-            className="form-input"
-            value={pricePerEgg}
-            disabled
-          />
+          <div className="form-group">
+            <label className="form-label">❌ Telur Pecah</label>
+            <div className="input-with-suffix">
+              <input
+                type="number"
+                className="form-input"
+                value={broken}
+                onChange={(e) => setBroken(e.target.value)}
+                placeholder="0"
+                min="0"
+              />
+              <span className="input-suffix">butir</span>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">💰 Telur Terjual</label>
+            <div className="input-with-suffix">
+              <input
+                type="number"
+                className="form-input"
+                value={sold}
+                onChange={(e) => setSold(e.target.value)}
+                placeholder="0"
+                min="0"
+              />
+              <span className="input-suffix">butir</span>
+            </div>
+          </div>
+
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <label className="form-label">🏷️ Harga per Butir</label>
+            <div className="input-with-suffix">
+              <input
+                type="number"
+                className="form-input"
+                value={pricePerEgg}
+                disabled
+              />
+              <span className="input-suffix">Rupiah</span>
+            </div>
+          </div>
         </div>
 
         {error && <div className="form-error">{error}</div>}

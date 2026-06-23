@@ -108,8 +108,9 @@ export const PuyuhQueries = {
   },
 
   async getTotalDeadThisMonth(year: number, month: number): Promise<number> {
-    const startDate = new Date(year, month - 1, 1).toISOString().split("T")[0];
-    const endDate = new Date(year, month, 0).toISOString().split("T")[0];
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
     const { data, error } = await supabase
       .from("daily_production")

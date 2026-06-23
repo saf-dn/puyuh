@@ -32,9 +32,9 @@ export default function ExpensePage() {
         </div>
       </header>
 
-      <section className="hero-card glass-panel fade-in-up" style={{ padding: '1.5rem' }}>
-        <p className="hero-label">Total Pengeluaran</p>
-        <h2 className="hero-amount text-danger" style={{ fontSize: '2rem' }}>
+      <section className="hero-card glass-panel fade-in-up" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.02) 100%)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+        <p className="hero-label" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Total Pengeluaran</p>
+        <h2 className="hero-amount text-white" style={{ fontSize: '2rem' }}>
           -{formatCurrency(total)}
         </h2>
       </section>

@@ -65,7 +65,7 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
     <Modal isOpen={isOpen} onClose={onClose} title="Catat Pemberian Pakan">
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label className="form-label">Tanggal</label>
+          <label className="form-label">📅 Tanggal</label>
           <input
             type="date"
             className="form-input"
@@ -76,7 +76,7 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
         </div>
 
         <div className="form-group">
-          <label className="form-label">Kelompok Puyuh</label>
+          <label className="form-label">🐦 Kelompok Puyuh</label>
           <select 
             className="form-select"
             value={puyuhId}
@@ -91,7 +91,7 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
         </div>
 
         <div className="form-group">
-          <label className="form-label">Jenis Pakan</label>
+          <label className="form-label">🌾 Jenis Pakan</label>
           <select 
             className="form-select"
             value={feedTypeId}
@@ -105,31 +105,37 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
           </select>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <div className="form-group" style={{ flex: 1 }}>
-            <label className="form-label">Gram / Ekor</label>
-            <input
-              type="number"
-              className="form-input"
-              value={amountPerBird}
-              onChange={(e) => setAmountPerBird(e.target.value)}
-              placeholder="25"
-              required
-              min="1"
-            />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-group">
+            <label className="form-label">⚖️ Gram / Ekor</label>
+            <div className="input-with-suffix">
+              <input
+                type="number"
+                className="form-input"
+                value={amountPerBird}
+                onChange={(e) => setAmountPerBird(e.target.value)}
+                placeholder="25"
+                required
+                min="1"
+              />
+              <span className="input-suffix">gram</span>
+            </div>
           </div>
 
-          <div className="form-group" style={{ flex: 1 }}>
-            <label className="form-label">Frekuensi / Hari</label>
-            <input
-              type="number"
-              className="form-input"
-              value={frequencyPerDay}
-              onChange={(e) => setFrequencyPerDay(e.target.value)}
-              placeholder="2"
-              required
-              min="1"
-            />
+          <div className="form-group">
+            <label className="form-label">🔄 Frekuensi</label>
+            <div className="input-with-suffix">
+              <input
+                type="number"
+                className="form-input"
+                value={frequencyPerDay}
+                onChange={(e) => setFrequencyPerDay(e.target.value)}
+                placeholder="2"
+                required
+                min="1"
+              />
+              <span className="input-suffix">kali/hari</span>
+            </div>
           </div>
         </div>
 

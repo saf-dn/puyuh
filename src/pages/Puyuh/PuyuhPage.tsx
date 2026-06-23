@@ -3,7 +3,7 @@ import { usePuyuhStore } from '@/stores/puyuhStore';
 import { useFeedStore } from '@/stores/feedStore';
 import { useProductionStore } from '@/stores/productionStore';
 import { calculateAge, formatNumber } from '@/utils/format';
-import type { DailyFeed } from '@/types';
+import type { DailyFeed, Puyuh, PuyuhInput } from '@/types';
 import PuyuhForm from '@/components/forms/PuyuhForm';
 import FeedForm from '@/components/forms/FeedForm';
 import ProductionForm from '@/components/forms/ProductionForm';
@@ -21,13 +21,36 @@ export default function PuyuhPage() {
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
   }, []);
 
-  const { puyuhGroups, feedTypes, totalPuyuh, isLoading: puyuhLoading, loadPuyuh, loadFeedTypes, addPuyuh } = usePuyuhStore();
+  const { puyuhGroups, feedTypes, totalPuyuh, isLoading: puyuhLoading, loadPuyuh, loadFeedTypes, addPuyuh, updatePuyuh } = usePuyuhStore();
   const { feeds, dailyFeedKg, isLoading: feedLoading, loadFeeds, addFeed } = useFeedStore();
-  const { todayProduction, monthlyStats, isLoading: prodLoading, loadProductions, addProduction } = useProductionStore();
+  const { todayProduction, monthlyStats, isLoading: prodLoading, loadProductions, addProduction, recordDeadPuyuh } = useProductionStore();
 
   const [showPuyuhForm, setShowPuyuhForm] = useState(false);
+  const [editingPuyuh, setEditingPuyuh] = useState<Puyuh | undefined>(undefined);
   const [showFeedForm, setShowFeedForm] = useState(false);
   const [showProductionForm, setShowProductionForm] = useState(false);
+  const [showAllGroups, setShowAllGroups] = useState(false);
+
+  const handlePuyuhSubmit = async (data: PuyuhInput, deadCount: number) => {
+    if (editingPuyuh) {
+      await updatePuyuh(editingPuyuh.id, data);
+      if (deadCount > 0) {
+        await recordDeadPuyuh(deadCount);
+      }
+    } else {
+      await addPuyuh(data);
+    }
+  };
+
+  const openEditPuyuh = (puyuh: Puyuh) => {
+    setEditingPuyuh(puyuh);
+    setShowPuyuhForm(true);
+  };
+
+  const handleClosePuyuhForm = () => {
+    setShowPuyuhForm(false);
+    setEditingPuyuh(undefined);
+  };
 
   useEffect(() => {
     loadPuyuh();
@@ -67,11 +90,12 @@ export default function PuyuhPage() {
 
       {/* Actions */}
       <section className="action-section">
-        <div className="section-header">
-          <h2 className="section-title">Aksi Cepat</h2>
-        </div>
+
         <div className="action-grid">
-          <button className="action-btn bg-red" onClick={() => setShowPuyuhForm(true)}>
+          <button className="action-btn bg-red" onClick={() => {
+            setEditingPuyuh(undefined);
+            setShowPuyuhForm(true);
+          }}>
             ➕ Tambah Puyuh
           </button>
           <button className="action-btn bg-blue" disabled={puyuhGroups.length === 0} onClick={() => setShowFeedForm(true)}>
@@ -129,16 +153,16 @@ export default function PuyuhPage() {
           </div>
         ) : (
           <div className="group-list">
-            {puyuhGroups.map((item) => {
+            {(showAllGroups ? puyuhGroups : puyuhGroups.slice(0, 3)).map((item) => {
               const latestFeed = getLatestFeedByPuyuh(feeds, item.id);
-              const statusLabel = 
+              const statusLabel =
                 item.status === "active" ? "Sehat" :
-                item.status === "inactive" ? "Mati" :
-                item.status === "sick" ? "Sakit" : item.status;
-              
-              const statusClass = 
+                  item.status === "inactive" ? "Mati" :
+                    item.status === "sick" ? "Sakit" : item.status;
+
+              const statusClass =
                 item.status === "active" ? "status-active" :
-                item.status === "sick" ? "status-sick" : "status-inactive";
+                  item.status === "sick" ? "status-sick" : "status-inactive";
 
               return (
                 <div key={item.id} className="group-card glass-panel fade-in-up">
@@ -150,7 +174,17 @@ export default function PuyuhPage() {
                         <span className="status-text">{statusLabel}</span>
                       </div>
                     </div>
-                    <span className="group-count">{formatNumber(item.count)} ekor</span>
+                    <div className="group-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="group-count">{formatNumber(item.count)} ekor</span>
+                      <button
+                        className="btn-icon"
+                        onClick={() => openEditPuyuh(item)}
+                        style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', color: 'inherit' }}
+                        title="Edit Data"
+                      >
+                        ✏️
+                      </button>
+                    </div>
                   </div>
 
                   {latestFeed ? (
@@ -169,13 +203,30 @@ export default function PuyuhPage() {
             })}
           </div>
         )}
+
+        {!isLoading && puyuhGroups.length > 3 && (
+          <button 
+            className="btn" 
+            style={{ 
+              width: '100%', 
+              marginTop: '1rem', 
+              backgroundColor: 'rgba(59, 130, 246, 0.1)', 
+              color: 'var(--accent-color)', 
+              border: '1px solid rgba(59, 130, 246, 0.3)' 
+            }}
+            onClick={() => setShowAllGroups(!showAllGroups)}
+          >
+            {showAllGroups ? 'Sembunyikan' : `Lihat Semua (${puyuhGroups.length})`}
+          </button>
+        )}
       </section>
       {/* Forms */}
       <PuyuhForm
         isOpen={showPuyuhForm}
-        onClose={() => setShowPuyuhForm(false)}
-        onSubmit={addPuyuh}
+        onClose={handleClosePuyuhForm}
+        onSubmit={handlePuyuhSubmit}
         isLoading={puyuhLoading}
+        initialData={editingPuyuh}
       />
       <FeedForm
         isOpen={showFeedForm}

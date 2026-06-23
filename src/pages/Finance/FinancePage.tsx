@@ -81,28 +81,67 @@ export default function FinancePage() {
         </h2>
       </section>
 
-      {/* Summary Cards */}
+      {/* Summary & Actions Combined */}
       <section className="summary-row fade-in-up" style={{ animationDelay: '0.2s' }}>
-        <div className="summary-card glass-panel">
-          <p className="summary-label text-success">Total Pendapatan</p>
-          <p className="summary-amount text-success">{formatCurrency(totalIncome)}</p>
+        <div className="summary-card glass-panel" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.02) 100%)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <p className="summary-label" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Total Pendapatan</p>
+            <p className="summary-amount text-white">{formatCurrency(totalIncome)}</p>
+          </div>
+          <button 
+            onClick={() => setShowIncomeForm(true)}
+            style={{ 
+              marginTop: '1rem', 
+              padding: '0.625rem', 
+              backgroundColor: 'rgba(16, 185, 129, 0.15)', 
+              color: '#10B981', 
+              border: '1px solid rgba(16, 185, 129, 0.2)', 
+              borderRadius: '8px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '0.5rem', 
+              fontSize: '0.875rem', 
+              fontWeight: 700, 
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.25)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.15)'}
+          >
+            <Inbox size={16} /> Catat Pendapatan
+          </button>
         </div>
-        <div className="summary-card stat-accent">
-          <p className="summary-label">Total Pengeluaran</p>
-          <p className="summary-amount text-white">{formatCurrency(totalExpense)}</p>
-        </div>
-      </section>
 
-      {/* Actions */}
-      <section className="action-row fade-in-up" style={{ animationDelay: '0.3s' }}>
-        <button className="action-btn bg-green" onClick={() => setShowIncomeForm(true)}>
-          <Inbox size={20} />
-          <span>Pendapatan</span>
-        </button>
-        <button className="action-btn bg-red" onClick={() => setShowExpenseForm(true)}>
-          <Receipt size={20} />
-          <span>Pengeluaran</span>
-        </button>
+        <div className="summary-card glass-panel" style={{ background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.02) 100%)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <p className="summary-label" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Total Pengeluaran</p>
+            <p className="summary-amount text-white">{formatCurrency(totalExpense)}</p>
+          </div>
+          <button 
+            onClick={() => setShowExpenseForm(true)}
+            style={{ 
+              marginTop: '1rem', 
+              padding: '0.625rem', 
+              backgroundColor: 'rgba(239, 68, 68, 0.15)', 
+              color: '#EF4444', 
+              border: '1px solid rgba(239, 68, 68, 0.2)', 
+              borderRadius: '8px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '0.5rem', 
+              fontSize: '0.875rem', 
+              fontWeight: 700, 
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.25)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'}
+          >
+            <Receipt size={16} /> Catat Pengeluaran
+          </button>
+        </div>
       </section>
 
       {/* Recent Transactions */}

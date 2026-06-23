@@ -100,8 +100,9 @@ export const TransactionQueries = {
   },
 
   async getMonthlySummary(year: number, month: number) {
-    const startStr = new Date(year, month - 1, 1).toISOString().split("T")[0];
-    const endStr = new Date(year, month, 0).toISOString().split("T")[0];
+    const startStr = `${year}-${String(month).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endStr = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
     const { data: txns, error } = await supabase
       .from("transactions")
