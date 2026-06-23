@@ -14,6 +14,9 @@ export const PuyuhQueries = {
       count: input.count,
       status,
       notes: input.notes || null,
+      kandang: input.kandang || null,
+      row: input.row || null,
+      kolom: input.kolom || null,
       created_at: now,
       updated_at: now,
     };
@@ -27,6 +30,9 @@ export const PuyuhQueries = {
       count: input.count,
       status,
       notes: input.notes,
+      kandang: input.kandang,
+      row: input.row,
+      kolom: input.kolom,
       created_at: now,
       updated_at: now,
     };

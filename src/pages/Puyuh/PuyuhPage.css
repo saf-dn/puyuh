@@ -247,6 +247,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .group-meta {
@@ -263,13 +265,20 @@
 }
 
 .group-count {
-  font-size: 1.375rem;
+  font-size: 1.125rem;
   font-weight: 900;
   color: #F8FAFC;
   background: linear-gradient(to bottom right, #FFFFFF, #CBD5E1);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .group-count {
+    font-size: 1.375rem;
+  }
 }
 
 .status-badge {

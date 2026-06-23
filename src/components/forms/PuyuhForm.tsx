@@ -16,6 +16,9 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
   const [ageMonths, setAgeMonths] = useState('');
   const [status, setStatus] = useState<'active' | 'inactive' | 'sick'>('active');
   const [notes, setNotes] = useState('');
+  const [kandang, setKandang] = useState('');
+  const [row, setRow] = useState('');
+  const [kolom, setKolom] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,12 +29,18 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
         setAgeMonths(initialData.age_months.toString());
         setStatus(initialData.status as any);
         setNotes(initialData.notes || '');
+        setKandang(initialData.kandang || '');
+        setRow(initialData.row || '');
+        setKolom(initialData.kolom || '');
       } else {
         setCount('');
         setDeadCount('');
         setAgeMonths('');
         setStatus('active');
         setNotes('');
+        setKandang('');
+        setRow('');
+        setKolom('');
       }
       setError(null);
     }
@@ -76,6 +85,9 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
         age_months: parsedAge,
         status: status as PuyuhStatus,
         notes: notes.trim() || undefined,
+        kandang: kandang.trim() || undefined,
+        row: row.trim() || undefined,
+        kolom: kolom.trim() || undefined,
       }, finalDeadCount);
 
       // Reset form
@@ -84,6 +96,9 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
       setAgeMonths('');
       setStatus('active');
       setNotes('');
+      setKandang('');
+      setRow('');
+      setKolom('');
       onClose();
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat menyimpan data');
@@ -140,9 +155,42 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
                 />
                 <span className="input-suffix">ekor</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}> {deadCount || 0} ekor saat disimpan</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}> {deadCount || 0} mati</span>
             </div>
           )}
+
+          <div className="form-group col-span-2">
+            <label className="form-label">Kandang</label>
+            <input
+              type="text"
+              className="form-input"
+              value={kandang}
+              onChange={(e) => setKandang(e.target.value)}
+              placeholder="Contoh: Kandang 1"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Baris (Row)</label>
+            <input
+              type="text"
+              className="form-input"
+              value={row}
+              onChange={(e) => setRow(e.target.value)}
+              placeholder="Contoh: 1"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Kolom</label>
+            <input
+              type="text"
+              className="form-input"
+              value={kolom}
+              onChange={(e) => setKolom(e.target.value)}
+              placeholder="Contoh: A"
+            />
+          </div>
         </div>
 
 

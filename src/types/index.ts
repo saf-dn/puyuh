@@ -22,6 +22,9 @@ export interface Puyuh {
   count: number;
   status: PuyuhStatus;
   notes?: string;
+  kandang?: string;
+  row?: string;
+  kolom?: string;
   created_at: DateTimeString;
   updated_at: DateTimeString;
 }
@@ -31,6 +34,9 @@ export interface PuyuhInput {
   count: number;
   status?: PuyuhStatus;
   notes?: string;
+  kandang?: string;
+  row?: string;
+  kolom?: string;
 }
 
 // Feed Types

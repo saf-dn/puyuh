@@ -142,7 +142,7 @@ export default function PuyuhPage() {
       {/* Puyuh Groups */}
       <section className="groups-section">
         <div className="section-header">
-          <h2 className="section-title">Kelompok Puyuh</h2>
+          <h2 className="section-title">kandang</h2>
           <span className="section-count">{puyuhGroups.length} grup</span>
         </div>
 
@@ -160,17 +160,25 @@ export default function PuyuhPage() {
 
               return (
                 <div key={item.id} className="group-card fade-in-up">
-                  <div className="group-top">
+                  <div className="group-top" style={{ alignItems: 'flex-start' }}>
                     <div className="group-meta">
-                      <h3 className="group-age">Usia {calculateAge(item.age_months, item.created_at)}</h3>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.25rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          Ditambahkan: {formatDate(item.created_at)}
+                      <h3 className="group-age" style={{ fontSize: '1.5rem', textTransform: 'capitalize' }}>
+                        {item.kandang || 'Kandang -'}
+                      </h3>
+
+                      <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                          Row: <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{item.row || '-'}</span>
+                        </span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                          Kolom: <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{item.kolom || '-'}</span>
+                        </span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                          Populasi: <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{formatNumber(item.count)} ekor</span>
                         </span>
                       </div>
                     </div>
-                    <div className="group-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="group-count">{formatNumber(item.count)} ekor</span>
+                    <div className="group-actions">
                       <button
                         className="edit-btn"
                         onClick={() => openEditPuyuh(item)}
@@ -181,14 +189,21 @@ export default function PuyuhPage() {
                     </div>
                   </div>
 
-                  {latestFeed ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '1rem' }}>
+                    <div style={{ color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 'bold' }}>
+                      Usia {calculateAge(item.age_months, item.created_at)}
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {formatDate(item.created_at)}
+                    </span>
+                  </div>
+
+                  {latestFeed && (
                     <div className="feed-info">
                       <p className="feed-info-text" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         <Wheat size={14} /> {latestFeed.frequency_per_day}x/hari · {latestFeed.amount_per_bird}g/ekor · {latestFeed.total_amount.toFixed(2)} kg total
                       </p>
                     </div>
-                  ) : (
-                    <p className="no-feed-text">Belum ada catatan pakan</p>
                   )}
 
                   {item.notes && <p className="group-notes" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><StickyNote size={14} /> {item.notes}</p>}
@@ -199,14 +214,14 @@ export default function PuyuhPage() {
         )}
 
         {!isLoading && puyuhGroups.length > 3 && (
-          <button 
-            className="btn" 
-            style={{ 
-              width: '100%', 
-              marginTop: '1rem', 
-              backgroundColor: 'rgba(59, 130, 246, 0.1)', 
-              color: 'var(--accent-color)', 
-              border: '1px solid rgba(59, 130, 246, 0.3)' 
+          <button
+            className="btn"
+            style={{
+              width: '100%',
+              marginTop: '1rem',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              color: 'var(--accent-color)',
+              border: '1px solid rgba(59, 130, 246, 0.3)'
             }}
             onClick={() => setShowAllGroups(!showAllGroups)}
           >

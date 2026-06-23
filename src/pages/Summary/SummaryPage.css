@@ -15,10 +15,18 @@
 }
 
 .hero-profit {
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: 900;
-  letter-spacing: -1.5px;
+  letter-spacing: -1px;
   margin-bottom: 1rem;
+  word-break: break-word;
+}
+
+@media (min-width: 640px) {
+  .hero-profit {
+    font-size: 2.5rem;
+    letter-spacing: -1.5px;
+  }
 }
 
 .hero-row {
@@ -75,8 +83,15 @@
 }
 
 .fin-amount {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 900;
+  word-break: break-word;
+}
+
+@media (min-width: 640px) {
+  .fin-amount {
+    font-size: 1.125rem;
+  }
 }
 
 /* Section Card */
@@ -144,8 +159,15 @@
 
 .metric-big-value {
   color: var(--text-primary);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 900;
+  word-break: break-word;
+}
+
+@media (min-width: 640px) {
+  .metric-big-value {
+    font-size: 1.5rem;
+  }
 }
 
 /* Info Row */
@@ -212,6 +234,13 @@
 }
 
 .profit-line-value {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 900;
+  word-break: break-word;
+}
+
+@media (min-width: 640px) {
+  .profit-line-value {
+    font-size: 1.5rem;
+  }
 }
