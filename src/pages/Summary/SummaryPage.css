@@ -48,7 +48,14 @@
 /* Fin Row */
 .fin-row {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .fin-row {
+    flex-direction: row;
+  }
 }
 
 .fin-card {
@@ -108,8 +115,15 @@
 /* Metrics */
 .metric-row {
   display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .metric-row {
+    flex-direction: row;
+  }
 }
 
 .metric-big {

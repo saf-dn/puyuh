@@ -93,7 +93,7 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={initialData ? "Edit Puyuh" : "Tambah Puyuh"}>
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Jumlah</label>
             <div className="input-with-suffix">
@@ -127,7 +127,7 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
           </div>
 
           {initialData && (
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="form-group col-span-2">
               <label className="form-label"> Mati </label>
               <div className="input-with-suffix">
                 <input

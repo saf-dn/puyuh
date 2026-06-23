@@ -54,8 +54,8 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Catat Produksi Telur">
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+        <div className="form-grid">
+          <div className="form-group col-span-2">
             <label className="form-label">Tanggal</label>
             <input
               type="date"
@@ -66,7 +66,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
             />
           </div>
 
-          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+          <div className="form-group col-span-2">
             <label className="form-label">Total Dihasilkan</label>
             <div className="input-with-suffix">
               <input
@@ -112,7 +112,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
             </div>
           </div>
 
-          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+          <div className="form-group col-span-2">
             <label className="form-label">Harga per Butir</label>
             <div className="input-with-suffix">
               <input

@@ -105,7 +105,7 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
           </select>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Gram / Ekor</label>
             <div className="input-with-suffix">
