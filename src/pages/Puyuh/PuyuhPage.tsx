@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePuyuhStore } from '@/stores/puyuhStore';
 import { useFeedStore } from '@/stores/feedStore';
 import { useProductionStore } from '@/stores/productionStore';
-import { calculateAge, formatNumber } from '@/utils/format';
+import { calculateAge, formatNumber, formatDate } from '@/utils/format';
 import type { DailyFeed, Puyuh, PuyuhInput } from '@/types';
+import { Plus, Wheat, Egg, Bird, Pencil, StickyNote } from 'lucide-react';
 import PuyuhForm from '@/components/forms/PuyuhForm';
 import FeedForm from '@/components/forms/FeedForm';
 import ProductionForm from '@/components/forms/ProductionForm';
@@ -95,14 +96,14 @@ export default function PuyuhPage() {
           <button className="action-btn bg-red" onClick={() => {
             setEditingPuyuh(undefined);
             setShowPuyuhForm(true);
-          }}>
-            ➕ Tambah Puyuh
+          }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Plus size={16} /> Tambah Puyuh
           </button>
-          <button className="action-btn bg-blue" disabled={puyuhGroups.length === 0} onClick={() => setShowFeedForm(true)}>
-            🌾 Catat Pakan
+          <button className="action-btn bg-blue" disabled={puyuhGroups.length === 0} onClick={() => setShowFeedForm(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Wheat size={16} /> Catat Pakan
           </button>
-          <button className="action-btn bg-green" onClick={() => setShowProductionForm(true)}>
-            🥚 Catat Produksi
+          <button className="action-btn bg-green" onClick={() => setShowProductionForm(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Egg size={16} /> Catat Produksi
           </button>
         </div>
       </section>
@@ -131,8 +132,9 @@ export default function PuyuhPage() {
             </div>
           </div>
         ) : (
-          <div className="no-prod-banner glass-panel">
-            <p>🥚 Belum ada catatan produksi hari ini</p>
+          <div className="no-prod-banner glass-panel" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Egg size={18} />
+            <p>Belum ada catatan produksi hari ini</p>
           </div>
         )}
       </section>
@@ -148,56 +150,48 @@ export default function PuyuhPage() {
           <div className="loading-state">Memuat data...</div>
         ) : puyuhGroups.length === 0 ? (
           <div className="empty-box glass-panel">
-            <span className="empty-icon">🐦</span>
+            <Bird size={48} strokeWidth={1.5} className="text-muted" opacity={0.5} />
             <p className="empty-text">Belum ada data puyuh</p>
           </div>
         ) : (
           <div className="group-list">
             {(showAllGroups ? puyuhGroups : puyuhGroups.slice(0, 3)).map((item) => {
               const latestFeed = getLatestFeedByPuyuh(feeds, item.id);
-              const statusLabel =
-                item.status === "active" ? "Sehat" :
-                  item.status === "inactive" ? "Mati" :
-                    item.status === "sick" ? "Sakit" : item.status;
-
-              const statusClass =
-                item.status === "active" ? "status-active" :
-                  item.status === "sick" ? "status-sick" : "status-inactive";
 
               return (
-                <div key={item.id} className="group-card glass-panel fade-in-up">
+                <div key={item.id} className="group-card fade-in-up">
                   <div className="group-top">
                     <div className="group-meta">
                       <h3 className="group-age">Usia {calculateAge(item.age_months, item.created_at)}</h3>
-                      <div className={`status-badge ${statusClass}`}>
-                        <div className="status-dot"></div>
-                        <span className="status-text">{statusLabel}</span>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.25rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          Ditambahkan: {formatDate(item.created_at)}
+                        </span>
                       </div>
                     </div>
                     <div className="group-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span className="group-count">{formatNumber(item.count)} ekor</span>
                       <button
-                        className="btn-icon"
+                        className="edit-btn"
                         onClick={() => openEditPuyuh(item)}
-                        style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', color: 'inherit' }}
                         title="Edit Data"
                       >
-                        ✏️
+                        <Pencil size={14} />
                       </button>
                     </div>
                   </div>
 
                   {latestFeed ? (
                     <div className="feed-info">
-                      <p className="feed-info-text">
-                        🌾 {latestFeed.frequency_per_day}x/hari · {latestFeed.amount_per_bird}g/ekor · {latestFeed.total_amount.toFixed(2)} kg total
+                      <p className="feed-info-text" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Wheat size={14} /> {latestFeed.frequency_per_day}x/hari · {latestFeed.amount_per_bird}g/ekor · {latestFeed.total_amount.toFixed(2)} kg total
                       </p>
                     </div>
                   ) : (
                     <p className="no-feed-text">Belum ada catatan pakan</p>
                   )}
 
-                  {item.notes && <p className="group-notes">📝 {item.notes}</p>}
+                  {item.notes && <p className="group-notes" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><StickyNote size={14} /> {item.notes}</p>}
                 </div>
               );
             })}

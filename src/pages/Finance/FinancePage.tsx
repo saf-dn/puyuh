@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFinanceStore } from '@/stores/financeStore';
 import { TransactionType } from '@/types';
 import { formatCurrency, getMonthYear } from '@/utils/format';
-import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Inbox, Receipt } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Inbox, Receipt, Banknote } from 'lucide-react';
 import TransactionForm from '@/components/forms/TransactionForm';
 import './FinancePage.css';
 
@@ -178,7 +178,7 @@ export default function FinancePage() {
           </div>
         ) : (
           <div className="empty-box glass-panel">
-            <span className="empty-icon">💸</span>
+            <Banknote size={48} strokeWidth={1.5} className="text-muted" opacity={0.5} />
             <p className="empty-text">Belum ada transaksi bulan ini</p>
           </div>
         )}

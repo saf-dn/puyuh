@@ -91,6 +91,18 @@ button {
   color: white;
 }
 
+.btn-cancel {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #FCA5A5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.btn-cancel:hover {
+  background-color: rgba(239, 68, 68, 0.3);
+  color: #FFF;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

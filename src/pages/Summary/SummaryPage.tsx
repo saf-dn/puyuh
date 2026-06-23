@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useSummaryStore } from '@/stores/summaryStore';
 import { calculateAge, formatCurrency, formatNumber, getMonthYear } from '@/utils/format';
+import { BarChart3 } from 'lucide-react';
 import './SummaryPage.css';
 
 // ─── Sub-components ──────────────────────────────────────────────────
@@ -65,7 +66,7 @@ export default function SummaryPage() {
   if (!monthlySummary) {
     return (
       <div className="page-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <span style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</span>
+        <BarChart3 size={48} strokeWidth={1.5} className="text-muted" opacity={0.5} style={{ marginBottom: '1rem' }} />
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>Belum ada data</h2>
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '1.5rem', maxWidth: '300px' }}>
           Mulai dengan menambahkan data puyuh dan transaksi

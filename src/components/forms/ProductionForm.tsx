@@ -56,7 +56,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-            <label className="form-label">📅 Tanggal</label>
+            <label className="form-label">Tanggal</label>
             <input
               type="date"
               className="form-input"
@@ -67,7 +67,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
           </div>
 
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-            <label className="form-label">🥚 Total Dihasilkan</label>
+            <label className="form-label">Total Dihasilkan</label>
             <div className="input-with-suffix">
               <input
                 type="number"
@@ -83,7 +83,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
           </div>
 
           <div className="form-group">
-            <label className="form-label">❌ Telur Pecah</label>
+            <label className="form-label">Telur Pecah</label>
             <div className="input-with-suffix">
               <input
                 type="number"
@@ -98,7 +98,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
           </div>
 
           <div className="form-group">
-            <label className="form-label">💰 Telur Terjual</label>
+            <label className="form-label">Telur Terjual</label>
             <div className="input-with-suffix">
               <input
                 type="number"
@@ -113,7 +113,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
           </div>
 
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-            <label className="form-label">🏷️ Harga per Butir</label>
+            <label className="form-label">Harga per Butir</label>
             <div className="input-with-suffix">
               <input
                 type="number"
@@ -131,7 +131,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
         <div className="form-actions">
           <button
             type="button"
-            className="btn glass-panel"
+            className="btn btn-cancel"
             onClick={onClose}
             disabled={isLoading}
           >

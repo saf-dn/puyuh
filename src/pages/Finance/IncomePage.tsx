@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFinanceStore } from '@/stores/financeStore';
 import { formatCurrency, getMonthYear } from '@/utils/format';
-import { ArrowDownLeft, ChevronLeft } from 'lucide-react';
+import { ArrowDownLeft, ChevronLeft, Inbox } from 'lucide-react';
 
 export default function IncomePage() {
   const navigate = useNavigate();
@@ -62,7 +62,7 @@ export default function IncomePage() {
           </div>
         ) : (
           <div className="empty-box glass-panel">
-            <span className="empty-icon">📥</span>
+            <Inbox size={48} strokeWidth={1.5} className="text-muted" opacity={0.5} />
             <p className="empty-text">Belum ada pendapatan bulan ini</p>
           </div>
         )}

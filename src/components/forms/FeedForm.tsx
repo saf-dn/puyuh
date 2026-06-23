@@ -54,7 +54,7 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
         amountPerBird: parsedAmount,
         frequencyPerDay: parsedFreq,
       });
-      
+
       onClose();
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat menyimpan data');
@@ -65,7 +65,7 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
     <Modal isOpen={isOpen} onClose={onClose} title="Catat Pemberian Pakan">
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label className="form-label">📅 Tanggal</label>
+          <label className="form-label">Tanggal</label>
           <input
             type="date"
             className="form-input"
@@ -76,8 +76,8 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
         </div>
 
         <div className="form-group">
-          <label className="form-label">🐦 Kelompok Puyuh</label>
-          <select 
+          <label className="form-label">Kelompok Puyuh</label>
+          <select
             className="form-select"
             value={puyuhId}
             onChange={(e) => setPuyuhId(e.target.value)}
@@ -91,8 +91,8 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
         </div>
 
         <div className="form-group">
-          <label className="form-label">🌾 Jenis Pakan</label>
-          <select 
+          <label className="form-label">Jenis Pakan</label>
+          <select
             className="form-select"
             value={feedTypeId}
             onChange={(e) => setFeedTypeId(e.target.value)}
@@ -107,7 +107,7 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div className="form-group">
-            <label className="form-label">⚖️ Gram / Ekor</label>
+            <label className="form-label">Gram / Ekor</label>
             <div className="input-with-suffix">
               <input
                 type="number"
@@ -123,7 +123,7 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
           </div>
 
           <div className="form-group">
-            <label className="form-label">🔄 Frekuensi</label>
+            <label className="form-label">Frekuensi</label>
             <div className="input-with-suffix">
               <input
                 type="number"
@@ -142,16 +142,16 @@ export default function FeedForm({ isOpen, onClose, onSubmit, puyuhGroups, feedT
         {error && <div className="form-error">{error}</div>}
 
         <div className="form-actions">
-          <button 
-            type="button" 
-            className="btn glass-panel" 
+          <button
+            type="button"
+            className="btn btn-cancel"
             onClick={onClose}
             disabled={isLoading}
           >
             Batal
           </button>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn btn-primary"
             style={{ backgroundColor: '#1565C0' }}
             disabled={isLoading}

@@ -78,7 +78,7 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
             className="form-input"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="Contoh: 50000"
+
             required
             min="1"
           />
@@ -106,7 +106,7 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
             className="form-input"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Contoh: Penjualan telur 5 kg"
+
           />
         </div>
 
@@ -115,7 +115,7 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
         <div className="form-actions">
           <button
             type="button"
-            className="btn glass-panel"
+            className="btn btn-cancel"
             onClick={onClose}
             disabled={isLoading}
           >

@@ -95,7 +95,7 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div className="form-group">
-            <label className="form-label">🐦 Jumlah</label>
+            <label className="form-label">Jumlah</label>
             <div className="input-with-suffix">
               <input
                 type="number"
@@ -111,7 +111,7 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
           </div>
 
           <div className="form-group">
-            <label className="form-label">⏳ Usia</label>
+            <label className="form-label"> Usia</label>
             <div className="input-with-suffix">
               <input
                 type="number"
@@ -128,7 +128,7 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
 
           {initialData && (
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label className="form-label">💀 Puyuh Mati / Berkurang</label>
+              <label className="form-label"> Mati </label>
               <div className="input-with-suffix">
                 <input
                   type="number"
@@ -140,35 +140,21 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
                 />
                 <span className="input-suffix">ekor</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>*Jumlah akan otomatis dikurangi {deadCount || 0} ekor saat disimpan</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}> {deadCount || 0} ekor saat disimpan</span>
             </div>
           )}
         </div>
 
-        {!initialData && (
-          <div className="form-group">
-            <label className="form-label">🩺 Status</label>
-            <select
-              className="form-select"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as any)}
-              required
-            >
-              <option value="active">🟢 Sehat</option>
-              <option value="sick">🟡 Sakit</option>
-              <option value="inactive">🔴 Mati / Afkir</option>
-            </select>
-          </div>
-        )}
+
 
         <div className="form-group">
-          <label className="form-label">📝 Catatan</label>
+          <label className="form-label">Catatan</label>
           <input
             type="text"
             className="form-input"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Opsional.."
+
           />
         </div>
 
@@ -177,7 +163,7 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
         <div className="form-actions">
           <button
             type="button"
-            className="btn glass-panel"
+            className="btn btn-cancel"
             onClick={onClose}
             disabled={isLoading}
           >
