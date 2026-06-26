@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useProductionStore } from '@/stores/productionStore';
 import { formatNumber, getCurrentDate, formatCurrency } from '@/utils/format';
-import { Egg, Camera, Pencil, Receipt, ShoppingCart, CalendarDays, ChevronDown, RefreshCw } from 'lucide-react';
+import { Egg, Camera, Pencil, Receipt, ShoppingCart, ChevronDown, RefreshCw } from 'lucide-react';
 import type { DailyProduction } from '@/types';
 import ProductionForm from '@/components/forms/ProductionForm';
 import SalesForm from '@/components/forms/SalesForm';

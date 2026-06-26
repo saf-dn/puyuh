@@ -91,14 +91,15 @@ export default function SummaryPage() {
             borderRadius: '0.5rem', cursor: 'pointer', position: 'relative'
           }}
           onClick={() => {
-            if (monthInputRef.current && 'showPicker' in monthInputRef.current) {
+            const input = monthInputRef.current as any;
+            if (input && 'showPicker' in input) {
               try {
-                monthInputRef.current.showPicker();
+                input.showPicker();
               } catch (e) {
-                monthInputRef.current.focus();
+                input.focus();
               }
             } else {
-              monthInputRef.current?.focus();
+              input?.focus();
             }
           }}
         >

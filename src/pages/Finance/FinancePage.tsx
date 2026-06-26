@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFinanceStore } from '@/stores/financeStore';
 import { TransactionType } from '@/types';
-import { formatCurrency, getMonthYear, formatDate } from '@/utils/format';
-import { Wallet, ArrowDown, ArrowUp, MoreVertical, Plus, Minus, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatCurrency, formatDate } from '@/utils/format';
+import { Wallet, ArrowDown, ArrowUp, Plus, Minus, Calendar } from 'lucide-react';
 import TransactionForm from '@/components/forms/TransactionForm';
 import './FinancePage.css';
 
@@ -54,14 +54,15 @@ export default function FinancePage() {
           <button
             className="np-cycle-picker"
             onClick={() => {
-              if (monthInputRef.current && 'showPicker' in monthInputRef.current) {
+              const input = monthInputRef.current as any;
+              if (input && 'showPicker' in input) {
                 try {
-                  monthInputRef.current.showPicker();
+                  input.showPicker();
                 } catch (e) {
-                  monthInputRef.current.focus();
+                  input.focus();
                 }
               } else {
-                monthInputRef.current?.focus();
+                input?.focus();
               }
             }}
           >

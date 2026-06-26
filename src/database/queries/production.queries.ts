@@ -9,7 +9,7 @@ export const ProductionQueries = {
     const id = uuid();
     const now = new Date().toISOString();
     const eggs_available =
-      input.eggs_produced_count -
+      (input.eggs_produced_count || 0) -
       (input.eggs_broken_count || 0) -
       (input.eggs_sold_count || 0);
     const total_revenue =
@@ -23,9 +23,9 @@ export const ProductionQueries = {
       eggs_sold_count: input.eggs_sold_count || 0,
       puyuh_died_count: input.puyuh_died_count || 0,
       price_per_egg: input.price_per_egg || 0,
-      buyer_name: input.buyer_name || null,
-      photo_eggs: input.photo_eggs || null,
-      photo_transfer: input.photo_transfer || null,
+      buyer_name: input.buyer_name || undefined,
+      photo_eggs: input.photo_eggs || undefined,
+      photo_transfer: input.photo_transfer || undefined,
       payment_status: input.payment_status || 'belum_bayar',
       created_at: now,
       updated_at: now,
@@ -79,12 +79,14 @@ export const ProductionQueries = {
         eggs_sold_count: 0,
         puyuh_died_count: 0,
         price_per_egg: data[0].price_per_egg,
-        buyer_name: null,
-        photo_eggs: null,
-        photo_transfer: null,
+        buyer_name: undefined,
+        photo_eggs: undefined,
+        photo_transfer: undefined,
         payment_status: "sudah_bayar",
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
+        eggs_available: 0,
+        total_revenue: 0,
       } as DailyProduction
     );
 

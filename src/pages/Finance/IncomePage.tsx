@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFinanceStore } from '@/stores/financeStore';
 import { formatCurrency, getMonthYear, formatDate } from '@/utils/format';
-import { ArrowDownLeft, ChevronLeft, Inbox, Edit } from 'lucide-react';
+import { ChevronLeft, Inbox, Edit } from 'lucide-react';
 import TransactionForm from '@/components/forms/TransactionForm';
 import { TransactionType } from '@/types';
 import './FinancePage.css';
@@ -124,7 +124,7 @@ export default function IncomePage() {
             setShowEditForm(false);
             setSelectedTx(null);
           }}
-          onSubmit={async (type, data) => {
+          onSubmit={async (_type, data) => {
             await updateTransaction(selectedTx.id, {
               category_id: data.categoryId,
               amount: data.amount,
