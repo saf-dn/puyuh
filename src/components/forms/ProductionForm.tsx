@@ -1,19 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
+import type { DailyProduction } from '@/types';
+import { getCurrentDate } from '@/utils/format';
+
 interface ProductionFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { eggsProduced: number; eggsBroken: number; eggsSold: number; puyuhDied: number; pricePerEgg: number; }) => Promise<void>;
+  onSubmit: (data: { eggsProduced?: number; eggsBroken?: number; }) => Promise<void>;
   isLoading: boolean;
+  initialData?: DailyProduction | null;
+  todayProduction?: DailyProduction | null;
 }
 
-export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }: ProductionFormProps) {
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading, initialData, todayProduction }: ProductionFormProps) {
+  const [date, setDate] = useState(() => getCurrentDate());
   const [produced, setProduced] = useState('');
   const [broken, setBroken] = useState('');
-  const [sold, setSold] = useState('');
-  const [pricePerEgg] = useState(400); // fixed
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setDate(initialData.date);
+        setProduced(initialData.eggs_produced_count?.toString() || '');
+        setBroken(initialData.eggs_broken_count?.toString() || '');
+      } else {
+        setDate(getCurrentDate());
+        setProduced('');
+        setBroken('');
+      }
+      setError(null);
+    }
+  }, [isOpen, initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +39,6 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
 
     const producedCount = parseInt(produced, 10);
     const brokenCount = parseInt(broken || '0', 10);
-    const soldCount = parseInt(sold || '0', 10);
 
     if (isNaN(producedCount) || producedCount <= 0) {
       setError('Jumlah produksi harus lebih dari 0');
@@ -31,8 +48,14 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
       setError('Jumlah pecah tidak valid');
       return;
     }
-    if (isNaN(soldCount) || soldCount < 0) {
-      setError('Jumlah terjual tidak valid');
+
+    // Validation: production >= sales
+    const deltaProduced = producedCount - (initialData?.eggs_produced_count ?? 0);
+    const newTotalProduced = (todayProduction?.eggs_produced_count ?? 0) + deltaProduced;
+    const totalSold = todayProduction?.eggs_sold_count ?? 0;
+    
+    if (newTotalProduced < totalSold) {
+      setError('Salah input: jumlah total produksi tidak boleh lebih kecil dari total penjualan');
       return;
     }
 
@@ -40,9 +63,6 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
       await onSubmit({
         eggsProduced: producedCount,
         eggsBroken: brokenCount,
-        eggsSold: soldCount,
-        puyuhDied: 0,
-        pricePerEgg,
       });
 
       onClose();
@@ -52,7 +72,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Catat Produksi Telur">
+    <Modal isOpen={isOpen} onClose={onClose} title={initialData ? "Edit Produksi Telur" : "Catat Produksi Telur"}>
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-group col-span-2">
@@ -61,8 +81,8 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
               type="date"
               className="form-input"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
+              disabled
+              style={{ backgroundColor: 'var(--bg-secondary)' }}
             />
           </div>
 
@@ -82,7 +102,7 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
             </div>
           </div>
 
-          <div className="form-group">
+          <div className="form-group col-span-2">
             <label className="form-label">Telur Pecah</label>
             <div className="input-with-suffix">
               <input
@@ -94,34 +114,6 @@ export default function ProductionForm({ isOpen, onClose, onSubmit, isLoading }:
                 min="0"
               />
               <span className="input-suffix">butir</span>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Telur Terjual</label>
-            <div className="input-with-suffix">
-              <input
-                type="number"
-                className="form-input"
-                value={sold}
-                onChange={(e) => setSold(e.target.value)}
-                placeholder="0"
-                min="0"
-              />
-              <span className="input-suffix">butir</span>
-            </div>
-          </div>
-
-          <div className="form-group col-span-2">
-            <label className="form-label">Harga per Butir</label>
-            <div className="input-with-suffix">
-              <input
-                type="number"
-                className="form-input"
-                value={pricePerEgg}
-                disabled
-              />
-              <span className="input-suffix">Rupiah</span>
             </div>
           </div>
         </div>

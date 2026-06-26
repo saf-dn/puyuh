@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import { TransactionType, type Category } from '@/types';
+import { getCurrentDate } from '@/utils/format';
 
 interface TransactionFormProps {
   isOpen: boolean;
@@ -9,16 +10,42 @@ interface TransactionFormProps {
   type: TransactionType;
   categories: Category[];
   isLoading: boolean;
+  transaction?: any;
+  onDelete?: () => Promise<void>;
 }
 
-export default function TransactionForm({ isOpen, onClose, onSubmit, type, categories, isLoading }: TransactionFormProps) {
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+export default function TransactionForm({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  type, 
+  categories, 
+  isLoading,
+  transaction,
+  onDelete
+}: TransactionFormProps) {
+  const [date, setDate] = useState(() => getCurrentDate());
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const isIncome = type === TransactionType.INCOME;
+
+  useEffect(() => {
+    if (transaction) {
+      setDate(transaction.date);
+      setAmount(transaction.amount.toString());
+      setCategoryId(transaction.category_id);
+      setDescription(transaction.description || '');
+    } else {
+      setDate(getCurrentDate());
+      setAmount('');
+      setCategoryId('');
+      setDescription('');
+    }
+    setError(null);
+  }, [transaction, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +84,7 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Catat ${isIncome ? 'Pendapatan' : 'Pengeluaran'}`}
+      title={transaction ? `Edit ${isIncome ? 'Pendapatan' : 'Pengeluaran'}` : `Catat ${isIncome ? 'Pendapatan' : 'Pengeluaran'}`}
     >
       <form onSubmit={handleSubmit}>
         <div className="form-group">
@@ -78,7 +105,6 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
             className="form-input"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-
             required
             min="1"
           />
@@ -106,29 +132,46 @@ export default function TransactionForm({ isOpen, onClose, onSubmit, type, categ
             className="form-input"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-
           />
         </div>
 
         {error && <div className="form-error">{error}</div>}
 
-        <div className="form-actions">
-          <button
-            type="button"
-            className="btn btn-cancel"
-            onClick={onClose}
-            disabled={isLoading}
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            className={`btn ${isIncome ? 'btn-primary' : 'btn-danger'}`}
-            style={isIncome ? { backgroundColor: '#10B981' } : undefined}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Menyimpan...' : 'Simpan Transaksi'}
-          </button>
+        <div className="form-actions" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+          {onDelete && transaction && (
+            <button
+              type="button"
+              className="btn btn-danger"
+              style={{ backgroundColor: '#EF4444', marginRight: 'auto' }}
+              onClick={async () => {
+                if (window.confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+                  await onDelete();
+                  onClose();
+                }
+              }}
+              disabled={isLoading}
+            >
+              Hapus
+            </button>
+          )}
+          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+            <button
+              type="button"
+              className="btn btn-cancel"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className={`btn ${isIncome ? 'btn-primary' : 'btn-danger'}`}
+              style={isIncome ? { backgroundColor: '#10B981' } : undefined}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Menyimpan...' : 'Simpan Transaksi'}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>

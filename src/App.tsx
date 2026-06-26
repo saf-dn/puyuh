@@ -5,6 +5,7 @@ import FinancePage from '@/pages/Finance/FinancePage';
 import IncomePage from '@/pages/Finance/IncomePage';
 import ExpensePage from '@/pages/Finance/ExpensePage';
 import SummaryPage from '@/pages/Summary/SummaryPage';
+import ProductionPage from '@/pages/Production/ProductionPage';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="finance" element={<FinancePage />} />
           <Route path="finance/income" element={<IncomePage />} />
           <Route path="finance/expense" element={<ExpensePage />} />
+          <Route path="production" element={<ProductionPage />} />
           <Route path="summary" element={<SummaryPage />} />
         </Route>
       </Routes>

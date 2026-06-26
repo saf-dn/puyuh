@@ -1,91 +1,10 @@
 import { supabase } from "@/database/supabase";
-import type { DailyFeed, DailyFeedInput, FeedType, FeedTypeInput } from "@/types";
+import type { DailyFeed, DailyFeedInput } from "@/types";
 import { v4 as uuid } from "uuid";
 
-export const FeedTypeQueries = {
-  async create(input: FeedTypeInput): Promise<FeedType> {
-    const id = uuid();
-    const now = new Date().toISOString();
-
-    const row = {
-      id,
-      name: input.name,
-      unit: input.unit,
-      price_per_unit: input.price_per_unit || 0,
-      created_at: now,
-    };
-
-    const { error } = await supabase.from("feed_type").insert(row);
-    if (error) throw new Error(error.message);
-
-    return {
-      id,
-      name: input.name,
-      unit: input.unit,
-      price_per_unit: input.price_per_unit || 0,
-      created_at: now,
-    };
-  },
-
-  async getById(id: string): Promise<FeedType | null> {
-    const { data, error } = await supabase
-      .from("feed_type")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) throw new Error(error.message);
-    return data || null;
-  },
-
-  async getAll(): Promise<FeedType[]> {
-    const { data, error } = await supabase
-      .from("feed_type")
-      .select("*")
-      .order("name", { ascending: true });
-
-    if (error) throw new Error(error.message);
-    return data || [];
-  },
-
-  async update(
-    id: string,
-    input: Partial<FeedTypeInput>,
-  ): Promise<FeedType | null> {
-    const current = await this.getById(id);
-    if (!current) return null;
-
-    const updated: FeedType = {
-      ...current,
-      ...input,
-      id: current.id,
-      created_at: current.created_at,
-    };
-
-    const { error } = await supabase
-      .from("feed_type")
-      .update({
-        name: updated.name,
-        unit: updated.unit,
-        price_per_unit: updated.price_per_unit,
-      })
-      .eq("id", id);
-
-    if (error) throw new Error(error.message);
-    return updated;
-  },
-
-  async delete(id: string): Promise<boolean> {
-    const { error } = await supabase.from("feed_type").delete().eq("id", id);
-
-    if (error) throw new Error(error.message);
-    return true;
-  },
-};
 
 export const DailyFeedQueries = {
   async create(input: DailyFeedInput): Promise<DailyFeed> {
-    // Check if entry already exists for this date + puyuh
     const { data: existing } = await supabase
       .from("daily_feed")
       .select("id")
@@ -99,17 +18,12 @@ export const DailyFeedQueries = {
 
     const id = uuid();
     const now = new Date().toISOString();
-    const { total_amount, cost } = await this.calculateTotals(input);
 
     const row = {
       id,
       date: input.date,
       puyuh_id: input.puyuh_id,
-      feed_type_id: input.feed_type_id,
-      frequency_per_day: input.frequency_per_day,
-      amount_per_bird: input.amount_per_bird,
-      total_amount,
-      cost,
+      photo: input.photo,
       created_at: now,
       updated_at: now,
     };
@@ -117,43 +31,10 @@ export const DailyFeedQueries = {
     const { error } = await supabase.from("daily_feed").insert(row);
     if (error) throw new Error(error.message);
 
-    return {
-      id,
-      date: input.date,
-      puyuh_id: input.puyuh_id,
-      feed_type_id: input.feed_type_id,
-      frequency_per_day: input.frequency_per_day,
-      amount_per_bird: input.amount_per_bird,
-      total_amount,
-      cost,
-      created_at: now,
-      updated_at: now,
-    };
+    return row;
   },
 
-  async calculateTotals(
-    input: DailyFeedInput,
-  ): Promise<{ total_amount: number; cost: number }> {
-    const { data: puyuh } = await supabase
-      .from("puyuh")
-      .select("count")
-      .eq("id", input.puyuh_id)
-      .maybeSingle();
 
-    const { data: feedType } = await supabase
-      .from("feed_type")
-      .select("price_per_unit")
-      .eq("id", input.feed_type_id)
-      .maybeSingle();
-
-    const birdCount = puyuh?.count || 1;
-    const totalGrams =
-      birdCount * input.amount_per_bird * input.frequency_per_day;
-    const total_amount = totalGrams / 1000;
-    const cost = total_amount * (feedType?.price_per_unit || 0);
-
-    return { total_amount, cost };
-  },
 
   async getById(id: string): Promise<DailyFeed | null> {
     const { data, error } = await supabase
@@ -229,21 +110,22 @@ export const DailyFeedQueries = {
 
     const { data, error } = await supabase
       .from("daily_feed")
-      .select("total_amount, cost")
+      .select("*, puyuh!inner(count)")
       .eq("puyuh_id", puyuh_id)
       .gte("date", startDate)
       .lte("date", endDate);
 
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) return { total_kg: 0, total_cost: 0 };
+    if (error) return { total_kg: 0, total_cost: 0 };
 
-    return {
-      total_kg: data.reduce(
-        (sum: number, r: any) => sum + (r.total_amount || 0),
-        0,
-      ),
-      total_cost: data.reduce((sum: number, r: any) => sum + (r.cost || 0), 0),
-    };
+    let total_kg = 0;
+    const feedRate = (Number(localStorage.getItem('np_feed_per_quail')) || 25) / 1000;
+    for (const record of data || []) {
+      const puyuhCount = (record.puyuh as any)?.count || 0;
+      total_kg += puyuhCount * feedRate;
+    }
+
+    const total_cost = total_kg * 7500;
+    return { total_kg, total_cost };
   },
 
   async getMonthlyTotalAll(
@@ -256,20 +138,21 @@ export const DailyFeedQueries = {
 
     const { data, error } = await supabase
       .from("daily_feed")
-      .select("total_amount, cost")
+      .select("*, puyuh!inner(count)")
       .gte("date", startDate)
       .lte("date", endDate);
 
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) return { total_kg: 0, total_cost: 0 };
+    if (error) return { total_kg: 0, total_cost: 0 };
 
-    return {
-      total_kg: data.reduce(
-        (sum: number, r: any) => sum + (r.total_amount || 0),
-        0,
-      ),
-      total_cost: data.reduce((sum: number, r: any) => sum + (r.cost || 0), 0),
-    };
+    let total_kg = 0;
+    const feedRate = (Number(localStorage.getItem('np_feed_per_quail')) || 25) / 1000;
+    for (const record of data || []) {
+      const puyuhCount = (record.puyuh as any)?.count || 0;
+      total_kg += puyuhCount * feedRate;
+    }
+
+    const total_cost = total_kg * 7500;
+    return { total_kg, total_cost };
   },
 
   async getDailyTotal(
@@ -277,19 +160,19 @@ export const DailyFeedQueries = {
   ): Promise<{ total_kg: number; total_cost: number }> {
     const { data, error } = await supabase
       .from("daily_feed")
-      .select("total_amount, cost")
+      .select("*, puyuh!inner(count)")
       .eq("date", date);
 
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) return { total_kg: 0, total_cost: 0 };
+    if (error) return { total_kg: 0, total_cost: 0 };
 
-    return {
-      total_kg: data.reduce(
-        (sum: number, r: any) => sum + (r.total_amount || 0),
-        0,
-      ),
-      total_cost: data.reduce((sum: number, r: any) => sum + (r.cost || 0), 0),
-    };
+    let total_kg = 0;
+    const feedRate = (Number(localStorage.getItem('np_feed_per_quail')) || 25) / 1000;
+    for (const record of data || []) {
+      const puyuhCount = (record.puyuh as any)?.count || 0;
+      total_kg += puyuhCount * feedRate;
+    }
+
+    return { total_kg, total_cost: total_kg * 7500 };
   },
 
   async update(
@@ -305,24 +188,12 @@ export const DailyFeedQueries = {
       ...input,
     };
 
-    const { total_amount, cost } = await this.calculateTotals({
-      date: merged.date,
-      puyuh_id: merged.puyuh_id,
-      feed_type_id: merged.feed_type_id,
-      frequency_per_day: merged.frequency_per_day,
-      amount_per_bird: merged.amount_per_bird,
-    });
-
     const { error } = await supabase
       .from("daily_feed")
       .update({
         date: merged.date,
         puyuh_id: merged.puyuh_id,
-        feed_type_id: merged.feed_type_id,
-        frequency_per_day: merged.frequency_per_day,
-        amount_per_bird: merged.amount_per_bird,
-        total_amount,
-        cost,
+        photo: merged.photo,
         updated_at: now,
       })
       .eq("id", id);
@@ -331,8 +202,6 @@ export const DailyFeedQueries = {
 
     return {
       ...merged,
-      total_amount,
-      cost,
       id: current.id,
       created_at: current.created_at,
       updated_at: now,
@@ -345,4 +214,50 @@ export const DailyFeedQueries = {
     if (error) throw new Error(error.message);
     return true;
   },
+};
+
+export const FeedStockQueries = {
+  async getStock(): Promise<number> {
+    const { data, error } = await supabase
+      .from("feed_stock")
+      .select("id, stock_kg")
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching feed stock:", error.message);
+      return 0;
+    }
+    
+    // If table is empty, return 0
+    if (!data) return 0;
+    
+    return data.stock_kg || 0;
+  },
+
+  async setStock(kg: number): Promise<void> {
+    const { data: existing, error: fetchError } = await supabase
+      .from("feed_stock")
+      .select("id")
+      .limit(1)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("Error checking feed stock:", fetchError.message);
+      return;
+    }
+
+    if (existing) {
+      const { error } = await supabase
+        .from("feed_stock")
+        .update({ stock_kg: kg, updated_at: new Date().toISOString() })
+        .eq("id", existing.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase
+        .from("feed_stock")
+        .insert({ stock_kg: kg });
+      if (error) throw new Error(error.message);
+    }
+  }
 };

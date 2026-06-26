@@ -75,7 +75,7 @@
 
 .nav-item.active {
   color: var(--accent-color);
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(204, 255, 128, 0.1);
 }
 
 /* Desktop layout */

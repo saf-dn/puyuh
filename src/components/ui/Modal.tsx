@@ -7,9 +7,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  customStyle?: React.CSSProperties;
 }
 
-export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, customStyle }: ModalProps) {
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -29,6 +30,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
       <div 
         className="modal-content glass-panel fade-in-up" 
         onClick={(e) => e.stopPropagation()}
+        style={customStyle}
       >
         <div className="modal-header">
           <h2 className="modal-title">{title}</h2>

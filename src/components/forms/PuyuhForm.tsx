@@ -170,27 +170,7 @@ export default function PuyuhForm({ isOpen, onClose, onSubmit, isLoading, initia
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Baris (Row)</label>
-            <input
-              type="text"
-              className="form-input"
-              value={row}
-              onChange={(e) => setRow(e.target.value)}
-              placeholder="Contoh: 1"
-            />
-          </div>
 
-          <div className="form-group">
-            <label className="form-label">Kolom</label>
-            <input
-              type="text"
-              className="form-input"
-              value={kolom}
-              onChange={(e) => setKolom(e.target.value)}
-              placeholder="Contoh: A"
-            />
-          </div>
         </div>
 
 

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFinanceStore } from '@/stores/financeStore';
 import { TransactionType } from '@/types';
-import { formatCurrency, getMonthYear } from '@/utils/format';
-import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Inbox, Receipt, Banknote } from 'lucide-react';
+import { formatCurrency, getMonthYear, formatDate } from '@/utils/format';
+import { Wallet, ArrowDown, ArrowUp, MoreVertical, Plus, Minus, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import TransactionForm from '@/components/forms/TransactionForm';
 import './FinancePage.css';
 
@@ -11,6 +11,7 @@ export default function FinancePage() {
   const navigate = useNavigate();
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const monthInputRef = useRef<HTMLInputElement>(null);
 
   const {
     incomeTransactions,
@@ -39,160 +40,153 @@ export default function FinancePage() {
 
   const recentTransactions = [...incomeTransactions, ...expenseTransactions]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 8);
+    .slice(0, 7);
 
-  const changeMonth = (delta: number) => {
-    let m = currentMonth.month + delta;
-    let y = currentMonth.year;
-    if (m > 12) {
-      m = 1;
-      y += 1;
-    } else if (m < 1) {
-      m = 12;
-      y -= 1;
-    }
-    setMonth(y, m);
-  };
+  const currentMonthName = new Date(currentMonth.year, currentMonth.month - 1).toLocaleString('id-ID', { month: 'long' });
 
   return (
-    <div className="page-container fade-in">
-      {/* Header */}
-      <header className="finance-header">
-        <div>
-          <p className="page-sub">Periode Keuangan</p>
-          <h1 className="page-title">{getMonthYear(currentMonth.year, currentMonth.month)}</h1>
-        </div>
-        <div className="month-nav">
-          <button className="nav-btn glass-panel" onClick={() => changeMonth(-1)}>
-            <ChevronLeft size={24} />
-          </button>
-          <button className="nav-btn glass-panel" onClick={() => changeMonth(1)}>
-            <ChevronRight size={24} />
-          </button>
-        </div>
-      </header>
-
-      {/* Hero Profit */}
-      <section className="hero-card glass-panel fade-in-up" style={{ animationDelay: '0.1s' }}>
-        <p className="hero-label">Saldo Bersih Bulan Ini</p>
-        <h2 className={`hero-amount ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
-          {profit >= 0 ? '+' : ''}
-          {formatCurrency(profit)}
-        </h2>
-      </section>
-
-      {/* Summary & Actions Combined */}
-      <section className="summary-row fade-in-up" style={{ animationDelay: '0.2s' }}>
-        <div className="summary-card glass-panel" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.02) 100%)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <p className="summary-label" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Total Pendapatan</p>
-            <p className="summary-amount text-white">{formatCurrency(totalIncome)}</p>
-          </div>
-          <button 
-            onClick={() => setShowIncomeForm(true)}
-            style={{ 
-              marginTop: '1rem', 
-              padding: '0.625rem', 
-              backgroundColor: 'rgba(16, 185, 129, 0.15)', 
-              color: '#10B981', 
-              border: '1px solid rgba(16, 185, 129, 0.2)', 
-              borderRadius: '8px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.5rem', 
-              fontSize: '0.875rem', 
-              fontWeight: 700, 
-              cursor: 'pointer',
-              transition: 'all 0.2s'
+    <div className="np-finance-page fade-in">
+      {/* Period Filter Header */}
+      <div className="np-fin-header">
+        <span className="np-fin-subtitle">Keuangan</span>
+        <div className="np-fin-title-row">
+          <h2 className="np-fin-title-large">{currentMonthName}</h2>
+          <button
+            className="np-cycle-picker"
+            onClick={() => {
+              if (monthInputRef.current && 'showPicker' in monthInputRef.current) {
+                try {
+                  monthInputRef.current.showPicker();
+                } catch (e) {
+                  monthInputRef.current.focus();
+                }
+              } else {
+                monthInputRef.current?.focus();
+              }
             }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.25)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.15)'}
           >
-            <Inbox size={16} /> Catat Pendapatan
+            <Calendar size={18} className="text-primary" />
+            <input
+              ref={monthInputRef}
+              type="month"
+              value={`${currentMonth.year}-${currentMonth.month.toString().padStart(2, '0')}`}
+              onChange={(e) => {
+                if (e.target.value) {
+                  const [y, m] = e.target.value.split('-');
+                  setMonth(parseInt(y), parseInt(m));
+                }
+              }}
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+              title="Pilih Bulan"
+            />
           </button>
         </div>
+      </div>
 
-        <div className="summary-card glass-panel" style={{ background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.02) 100%)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <p className="summary-label" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Total Pengeluaran</p>
-            <p className="summary-amount text-white">{formatCurrency(totalExpense)}</p>
+      {/* Top Row: Info Panels & Actions */}
+      <div className="np-fin-top-grid">
+        {/* Info Panel: Summary (Saldo, Pendapatan, Pengeluaran) */}
+        <div className="np-glass-card np-fin-summary group">
+          <div className="np-fin-saldo-section">
+            <div className="np-saldo-glow"></div>
+            <div className="np-saldo-header">
+              <span className="np-saldo-label">Saldo Bersih</span>
+              <div className="np-saldo-icon">
+                <Wallet size={18} />
+              </div>
+            </div>
+            <div>
+              <div className="np-saldo-value">{formatCurrency(profit)}</div>
+            </div>
           </div>
-          <button 
-            onClick={() => setShowExpenseForm(true)}
-            style={{ 
-              marginTop: '1rem', 
-              padding: '0.625rem', 
-              backgroundColor: 'rgba(239, 68, 68, 0.15)', 
-              color: '#EF4444', 
-              border: '1px solid rgba(239, 68, 68, 0.2)', 
-              borderRadius: '8px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.5rem', 
-              fontSize: '0.875rem', 
-              fontWeight: 700, 
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.25)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'}
-          >
-            <Receipt size={16} /> Catat Pengeluaran
+
+          <div className="np-fin-totals-section">
+            <div className="np-total-col np-total-left">
+              <div className="np-total-header">
+                <ArrowDown size={16} className="text-primary" />
+                <span className="np-total-label">Pemasukan</span>
+              </div>
+              <div className="np-total-value text-primary">{formatCurrency(totalIncome)}</div>
+            </div>
+            <div className="np-total-col np-total-right">
+              <div className="np-total-header">
+                <ArrowUp size={16} className="text-error" />
+                <span className="np-total-label">Pengeluaran</span>
+              </div>
+              <div className="np-total-value text-error">-{formatCurrency(totalExpense)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Middle Row: Chart & Actions */}
+      <div className="np-fin-mid-grid">
+
+        {/* Action Buttons */}
+        <div className="np-glass-card np-fin-actions" >
+          <button className="np-action-btn np-action-income group" onClick={() => setShowIncomeForm(true)} >
+            <div className="np-action-icon-box bg-primary-20 group-hover-scale">
+              <Plus size={20} className="text-primary" />
+            </div>
+            <span className="np-action-text text-primary">Catat Pendapatan</span>
+          </button>
+          <button className="np-action-btn np-action-expense group" onClick={() => setShowExpenseForm(true)}>
+            <div className="np-action-icon-box bg-error-20 group-hover-scale">
+              <Minus size={20} className="text-error" />
+            </div>
+            <span className="np-action-text text-error">Catat Pengeluaran</span>
           </button>
         </div>
-      </section>
+      </div>
 
-      {/* Recent Transactions */}
-      <section className="transactions-section fade-in-up" style={{ animationDelay: '0.4s' }}>
-        <div className="section-header">
-          <h2 className="section-title">Transaksi Terbaru</h2>
+      {/* Transaction History Table */}
+      <div className="np-glass-card np-fin-table-container">
+        <div className="np-table-header">
+          <h4 className="np-section-title">Riwayat Transaksi</h4>
+          <button className="np-link-btn" onClick={() => navigate('/finance/income')}>Lihat Semua</button>
         </div>
-
-        {isLoading && recentTransactions.length === 0 ? (
-          <div className="loading-state">Memuat data...</div>
-        ) : recentTransactions.length > 0 ? (
-          <div className="tx-list">
-            {recentTransactions.map((t, index) => {
-              const isIncome = t.transaction_type === TransactionType.INCOME;
-              return (
-                <div key={`${t.id}-${index}`} className="tx-row glass-panel">
-                  <div className={`tx-icon-box ${isIncome ? 'bg-success-light text-success' : 'bg-danger-light text-danger'}`}>
-                    {isIncome ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
-                  </div>
-                  <div className="tx-details">
-                    <p className="tx-category">{t.category?.name || 'Lainnya'}</p>
-                    {t.description && <p className="tx-desc">{t.description}</p>}
-                  </div>
-                  <div className="tx-amount-col">
-                    <p className={`tx-amount ${isIncome ? 'text-success' : 'text-danger'}`}>
-                      {isIncome ? '+' : '-'}
-                      {formatCurrency(t.amount)}
-                    </p>
-                    <p className="tx-date">{t.date}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="empty-box glass-panel">
-            <Banknote size={48} strokeWidth={1.5} className="text-muted" opacity={0.5} />
-            <p className="empty-text">Belum ada transaksi bulan ini</p>
-          </div>
-        )}
-      </section>
-
-      {/* Quick Links */}
-      <section className="link-row fade-in-up" style={{ animationDelay: '0.5s' }}>
-        <button className="link-btn glass-panel" onClick={() => navigate('/finance/income')}>
-          Lihat Semua Pendapatan &rarr;
-        </button>
-        <button className="link-btn glass-panel" onClick={() => navigate('/finance/expense')}>
-          Lihat Semua Pengeluaran &rarr;
-        </button>
-      </section>
+        <div className="np-table-wrapper">
+          <table className="np-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Kategori</th>
+                <th>Deskripsi</th>
+                <th className="text-right">Jumlah</th>
+                <th className="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentTransactions.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center text-muted" style={{ padding: '2rem' }}>
+                    {isLoading ? 'Memuat data...' : 'Belum ada transaksi bulan ini'}
+                  </td>
+                </tr>
+              ) : (
+                recentTransactions.map((t, i) => {
+                  const isIncome = t.transaction_type === TransactionType.INCOME;
+                  return (
+                    <tr key={`${t.id}-${i}`}>
+                      <td>{formatDate(t.date)}</td>
+                      <td>{t.category?.name || 'Lainnya'}</td>
+                      <td className="text-muted">{t.description || '-'}</td>
+                      <td className={`text-right font-medium ${isIncome ? 'text-primary' : 'text-error'}`}>
+                        {isIncome ? '+' : '-'} {formatCurrency(t.amount)}
+                      </td>
+                      <td className="text-center">
+                        <span className={`np-status-badge ${isIncome ? 'badge-primary' : 'badge-primary'}`}>
+                          Selesai
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Forms */}
       <TransactionForm

@@ -2,8 +2,15 @@ import { differenceInMonths, differenceInDays, addMonths } from "date-fns";
 
 // ─── Date Helpers ────────────────────────────────────────────────
 
+export function getLocalIsoDate(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function getCurrentDate(): string {
-  return new Date().toISOString().split("T")[0];
+  return getLocalIsoDate(new Date());
 }
 
 export function formatDate(date: string | Date): string {
@@ -28,8 +35,8 @@ export function getMonthYear(year: number, month: number): string {
 /** Returns ISO date strings for the first and last day of the month. */
 export function getDateRange(year: number, month: number) {
   return {
-    start: new Date(year, month - 1, 1).toISOString().split("T")[0],
-    end: new Date(year, month, 0).toISOString().split("T")[0],
+    start: getLocalIsoDate(new Date(year, month - 1, 1)),
+    end: getLocalIsoDate(new Date(year, month, 0)),
   };
 }
 

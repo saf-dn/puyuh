@@ -98,6 +98,9 @@ export const PuyuhQueries = {
         count: updated.count,
         status: updated.status,
         notes: updated.notes || null,
+        kandang: updated.kandang || null,
+        row: updated.row || null,
+        kolom: updated.kolom || null,
         updated_at: now,
       })
       .eq("id", id);
@@ -107,6 +110,9 @@ export const PuyuhQueries = {
   },
 
   async delete(id: string): Promise<boolean> {
+    // Delete dependent daily_feed records first to avoid foreign key conflict
+    await supabase.from("daily_feed").delete().eq("puyuh_id", id);
+
     const { error } = await supabase.from("puyuh").delete().eq("id", id);
 
     if (error) throw new Error(error.message);

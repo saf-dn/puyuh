@@ -40,42 +40,21 @@ export interface PuyuhInput {
 }
 
 // Feed Types
-export interface FeedType {
-  id: ID;
-  name: string;
-  unit: string; // 'kg', 'liter', etc
-  price_per_unit: number;
-  created_at: DateTimeString;
-}
-
-export interface FeedTypeInput {
-  name: string;
-  unit: string;
-  price_per_unit?: number;
-}
-
 export interface DailyFeed {
   id: ID;
   date: DateString;
   puyuh_id: ID;
-  feed_type_id: ID;
-  frequency_per_day: number;
-  amount_per_bird: number;
-  total_amount: number;
-  cost: number;
+  photo?: string;
   created_at: DateTimeString;
   updated_at: DateTimeString;
   // Relations (populated separately)
   puyuh?: Puyuh;
-  feedType?: FeedType;
 }
 
 export interface DailyFeedInput {
   date: DateString;
   puyuh_id: ID;
-  feed_type_id: ID;
-  frequency_per_day: number;
-  amount_per_bird: number;
+  photo?: string;
 }
 
 // Production Types
@@ -89,17 +68,25 @@ export interface DailyProduction {
   puyuh_died_count: number;
   price_per_egg: number;
   total_revenue: number; // computed: sold_count * price_per_egg
+  buyer_name?: string;
+  photo_eggs?: string;
+  photo_transfer?: string;
+  payment_status?: string;
   created_at: DateTimeString;
   updated_at: DateTimeString;
 }
 
 export interface DailyProductionInput {
   date: DateString;
-  eggs_produced_count: number;
+  eggs_produced_count?: number;
   eggs_broken_count?: number;
   eggs_sold_count?: number;
   puyuh_died_count?: number;
   price_per_egg?: number;
+  buyer_name?: string;
+  photo_eggs?: string;
+  photo_transfer?: string;
+  payment_status?: string;
 }
 
 // Category Types
@@ -183,6 +170,10 @@ export interface MonthlySummary {
   income_by_category: { [key: string]: number };
   // Expense breakdown
   expense_by_category: { [key: string]: number };
+  // Weekly profit breakdown
+  weekly_profit: number[];
+  weekly_income?: number[];
+  weekly_expense?: number[];
 }
 
 export interface PuyuhSummary {

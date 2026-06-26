@@ -106,7 +106,7 @@ export const TransactionQueries = {
 
     const { data: txns, error } = await supabase
       .from("transactions")
-      .select("transaction_type, category_id, amount")
+      .select("transaction_type, category_id, amount, date")
       .gte("date", startStr)
       .lte("date", endStr);
     if (error) throw new Error(error.message);
@@ -125,16 +125,35 @@ export const TransactionQueries = {
       total_expense = 0;
     const income_by_category: Record<string, number> = {};
     const expense_by_category: Record<string, number> = {};
+    const weekly_profit = [0, 0, 0, 0, 0];
+    const weekly_income = [0, 0, 0, 0, 0];
+    const weekly_expense = [0, 0, 0, 0, 0];
+
+    const getWeekIndex = (dateStr: string) => {
+      if (!dateStr) return 4;
+      const day = new Date(dateStr).getDate();
+      if (isNaN(day)) return 4;
+      if (day <= 7) return 0;
+      if (day <= 14) return 1;
+      if (day <= 21) return 2;
+      if (day <= 28) return 3;
+      return 4;
+    };
 
     for (const t of txns || []) {
+      const weekIdx = getWeekIndex(t.date);
       if (t.transaction_type === "INCOME") {
         total_income += t.amount;
         const name = incMap.get(t.category_id) || "Unknown";
         income_by_category[name] = (income_by_category[name] || 0) + t.amount;
+        weekly_profit[weekIdx] += t.amount;
+        weekly_income[weekIdx] += t.amount;
       } else {
         total_expense += t.amount;
         const name = expMap.get(t.category_id) || "Unknown";
         expense_by_category[name] = (expense_by_category[name] || 0) + t.amount;
+        weekly_profit[weekIdx] -= t.amount;
+        weekly_expense[weekIdx] += t.amount;
       }
     }
 
@@ -143,6 +162,9 @@ export const TransactionQueries = {
       total_expense,
       income_by_category,
       expense_by_category,
+      weekly_profit,
+      weekly_income,
+      weekly_expense,
     };
   },
 

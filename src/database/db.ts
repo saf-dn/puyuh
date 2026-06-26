@@ -12,7 +12,7 @@ export async function initDatabase(): Promise<void> {
   if (initialized) return;
 
   try {
-    await Promise.all([seedDefaultCategories(), seedDefaultFeedTypes()]);
+    await Promise.all([seedDefaultCategories()]);
     initialized = true;
     console.log("✅ Supabase database initialized");
   } catch (error) {
@@ -67,23 +67,4 @@ async function seedDefaultCategories(): Promise<void> {
   console.log("✅ Default categories seeded");
 }
 
-async function seedDefaultFeedTypes(): Promise<void> {
-  const { count } = await supabase
-    .from("feed_type")
-    .select("*", { count: "exact", head: true });
 
-  if (count && count > 0) return;
-
-  const defaultFeedTypes = [
-    { id: "feed_starter", name: "Pakan Starter", unit: "kg", price_per_unit: 12000 },
-    { id: "feed_grower", name: "Pakan Grower", unit: "kg", price_per_unit: 11000 },
-    { id: "feed_layer", name: "Pakan Layer", unit: "kg", price_per_unit: 10000 },
-  ];
-
-  const { error } = await supabase
-    .from("feed_type")
-    .upsert(defaultFeedTypes, { onConflict: "id" });
-  if (error) console.error("Failed to seed feed types:", error);
-
-  console.log("✅ Default feed types seeded");
-}

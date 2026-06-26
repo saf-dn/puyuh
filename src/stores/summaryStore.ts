@@ -3,7 +3,7 @@ import { ProductionQueries } from "@/database/queries/production.queries";
 import { PuyuhQueries } from "@/database/queries/puyuh.queries";
 import { TransactionQueries } from "@/database/queries/transaction.queries";
 import type { DailyProduction, DailyProductionInput, MonthlySummary } from "@/types";
-import { getDaysInMonth, storeError } from "@/utils/format";
+import { getDaysInMonth, storeError, getCurrentDate } from "@/utils/format";
 import { create } from "zustand";
 
 interface SummaryState {
@@ -29,7 +29,7 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   error: null,
   monthlySummary: null,
   dailyProduction: null,
-  currentDate: new Date().toISOString().split("T")[0],
+  currentDate: getCurrentDate(),
 
   loadMonthlySummary: async (year: number, month: number) => {
     const hasData = get().monthlySummary !== null;
@@ -84,6 +84,9 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
             : 0,
         income_by_category: finStats.income_by_category,
         expense_by_category: finStats.expense_by_category,
+        weekly_profit: finStats.weekly_profit,
+        weekly_income: finStats.weekly_income,
+        weekly_expense: finStats.weekly_expense,
       };
 
       set({ monthlySummary: summary, isLoading: false });

@@ -4,10 +4,7 @@ import { v4 as uuid } from "uuid";
 
 export const ProductionQueries = {
   async create(input: DailyProductionInput): Promise<DailyProduction> {
-    const existing = await this.getByDate(input.date);
-    if (existing) {
-      return (await this.update(existing.id, input))!;
-    }
+
 
     const id = uuid();
     const now = new Date().toISOString();
@@ -21,11 +18,15 @@ export const ProductionQueries = {
     const row = {
       id,
       date: input.date,
-      eggs_produced_count: input.eggs_produced_count,
+      eggs_produced_count: input.eggs_produced_count || 0,
       eggs_broken_count: input.eggs_broken_count || 0,
       eggs_sold_count: input.eggs_sold_count || 0,
       puyuh_died_count: input.puyuh_died_count || 0,
       price_per_egg: input.price_per_egg || 0,
+      buyer_name: input.buyer_name || null,
+      photo_eggs: input.photo_eggs || null,
+      photo_transfer: input.photo_transfer || null,
+      payment_status: input.payment_status || 'belum_bayar',
       created_at: now,
       updated_at: now,
     };
@@ -58,18 +59,43 @@ export const ProductionQueries = {
     const { data, error } = await supabase
       .from("daily_production")
       .select("*")
-      .eq("date", date)
-      .maybeSingle();
+      .eq("date", date);
     if (error) throw new Error(error.message);
-    if (!data) return null;
-    return {
-      ...data,
-      eggs_available:
-        data.eggs_produced_count -
-        data.eggs_broken_count -
-        data.eggs_sold_count,
-      total_revenue: data.eggs_sold_count * data.price_per_egg,
-    };
+    if (!data || data.length === 0) return null;
+
+    const aggregated = data.reduce(
+      (acc, row) => {
+        acc.eggs_produced_count += row.eggs_produced_count || 0;
+        acc.eggs_broken_count += row.eggs_broken_count || 0;
+        acc.eggs_sold_count += row.eggs_sold_count || 0;
+        acc.puyuh_died_count += row.puyuh_died_count || 0;
+        return acc;
+      },
+      {
+        id: "aggregated-" + date,
+        date: date,
+        eggs_produced_count: 0,
+        eggs_broken_count: 0,
+        eggs_sold_count: 0,
+        puyuh_died_count: 0,
+        price_per_egg: data[0].price_per_egg,
+        buyer_name: null,
+        photo_eggs: null,
+        photo_transfer: null,
+        payment_status: "sudah_bayar",
+        created_at: data[0].created_at,
+        updated_at: data[0].updated_at,
+      } as DailyProduction
+    );
+
+    aggregated.eggs_available =
+      aggregated.eggs_produced_count -
+      aggregated.eggs_broken_count -
+      aggregated.eggs_sold_count;
+    aggregated.total_revenue =
+      aggregated.eggs_sold_count * aggregated.price_per_egg;
+
+    return aggregated;
   },
 
   async getRange(
@@ -148,7 +174,15 @@ export const ProductionQueries = {
     const now = new Date().toISOString();
     const updated = {
       ...current,
-      ...input,
+      eggs_produced_count: input.eggs_produced_count !== undefined ? input.eggs_produced_count : current.eggs_produced_count,
+      eggs_broken_count: input.eggs_broken_count !== undefined ? input.eggs_broken_count : current.eggs_broken_count,
+      eggs_sold_count: input.eggs_sold_count !== undefined ? input.eggs_sold_count : current.eggs_sold_count,
+      puyuh_died_count: input.puyuh_died_count !== undefined ? input.puyuh_died_count : current.puyuh_died_count,
+      price_per_egg: input.price_per_egg !== undefined ? input.price_per_egg : current.price_per_egg,
+      buyer_name: input.buyer_name !== undefined ? input.buyer_name : current.buyer_name,
+      photo_eggs: input.photo_eggs !== undefined ? input.photo_eggs : current.photo_eggs,
+      photo_transfer: input.photo_transfer !== undefined ? input.photo_transfer : current.photo_transfer,
+      payment_status: input.payment_status !== undefined ? input.payment_status : current.payment_status,
       id: current.id,
       created_at: current.created_at,
       updated_at: now,
@@ -167,6 +201,10 @@ export const ProductionQueries = {
         eggs_sold_count: updated.eggs_sold_count,
         puyuh_died_count: updated.puyuh_died_count,
         price_per_egg: updated.price_per_egg,
+        buyer_name: updated.buyer_name,
+        photo_eggs: updated.photo_eggs,
+        photo_transfer: updated.photo_transfer,
+        payment_status: updated.payment_status,
         updated_at: now,
       })
       .eq("id", id);
