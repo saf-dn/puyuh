@@ -25,6 +25,19 @@
   --font-md: clamp(0.9rem, 3vw, 1rem);
   --font-lg: clamp(1rem, 4vw, 1.25rem);
   --font-xl: clamp(1.2rem, 5vw, 1.5rem);
+
+  /* NexPuyuh Theme Variables (Global) */
+  --p-bg: #11150a;
+  --p-surface: #191d12;
+  --p-surface-high: #272c1f;
+  --p-primary: #ccff80;
+  --p-secondary: #ffb95f;
+  --p-tertiary-dim: #c0c1ff;
+  --p-on-surface: #e0e4d2;
+  --p-on-surface-var: #c2cab0;
+  --p-on-primary: #213600;
+  --p-border: rgba(255, 255, 255, 0.1);
+  --p-error: #ffb4ab;
 }
 
 @media (max-width: 480px) {
@@ -134,4 +147,29 @@ button {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Global NexPuyuh Utilities */
+.np-glass-card {
+  background-color: rgba(25, 29, 18, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--p-border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.text-primary { color: var(--p-primary) !important; }
+.text-secondary { color: var(--p-secondary) !important; }
+.text-error { color: var(--p-error) !important; }
+.text-muted { color: var(--p-on-surface-var) !important; opacity: 0.7; }
+.bg-primary-20 { background-color: rgba(204, 255, 128, 0.2) !important; }
+.bg-error-20 { background-color: rgba(255, 180, 171, 0.2) !important; }
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

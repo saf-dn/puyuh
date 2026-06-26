@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFinanceStore } from '@/stores/financeStore';
 import { TransactionType } from '@/types';
@@ -34,13 +34,15 @@ export default function FinancePage() {
     loadFinanceData(currentMonth.year, currentMonth.month);
   }, [loadFinanceData, currentMonth.year, currentMonth.month]);
 
-  const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = useMemo(() => incomeTransactions.reduce((sum, t) => sum + t.amount, 0), [incomeTransactions]);
+  const totalExpense = useMemo(() => expenseTransactions.reduce((sum, t) => sum + t.amount, 0), [expenseTransactions]);
   const profit = totalIncome - totalExpense;
 
-  const recentTransactions = [...incomeTransactions, ...expenseTransactions]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 7);
+  const recentTransactions = useMemo(() => {
+    return [...incomeTransactions, ...expenseTransactions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 7);
+  }, [incomeTransactions, expenseTransactions]);
 
   const currentMonthName = new Date(currentMonth.year, currentMonth.month - 1).toLocaleString('id-ID', { month: 'long' });
 
@@ -172,7 +174,7 @@ export default function FinancePage() {
                       <td>{formatDate(t.date)}</td>
                       <td>{t.category?.name || 'Lainnya'}</td>
                       <td className="text-muted">{t.description || '-'}</td>
-                      <td className={`text-right font-medium ${isIncome ? 'text-primary' : 'text-error'}`}>
+                      <td className={`text-right font-medium ${isIncome ? 'text-primary' : 'text-error'}`} style={{ whiteSpace: 'nowrap' }}>
                         {isIncome ? '+' : '-'} {formatCurrency(t.amount)}
                       </td>
                       <td className="text-center">

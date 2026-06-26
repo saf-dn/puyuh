@@ -1,18 +1,6 @@
 /* ProductionPage.css */
 .np-production-page {
-    /* Theme Variables */
-    --p-bg: #11150a;
-    --p-surface: #191d12;
-    --p-surface-high: #272c1f;
-    --p-primary: #ccff80;
-    --p-secondary: #ffb95f;
-    --p-on-surface: #e0e4d2;
-    --p-on-surface-var: #c2cab0;
-    --p-on-primary: #213600;
-    --p-border: rgba(255, 255, 255, 0.1);
-    --p-error: #ffb4ab;
-    --p-tertiary-dim: #c0c1ff;
-    
+
     background-color: var(--p-bg);
     color: var(--p-on-surface);
     background-image: radial-gradient(circle at 50% 0%, rgba(204, 255, 128, 0.08) 0%, transparent 60%);
@@ -35,15 +23,6 @@
     }
 }
 
-/* Glass Card */
-.np-glass-card {
-    background-color: rgba(50, 54, 42, 0.4);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--p-border);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-}
 
 /* Header Section */
 .np-prod-header-section {

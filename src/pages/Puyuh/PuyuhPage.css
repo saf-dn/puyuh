@@ -1,16 +1,6 @@
 /* PuyuhPage.css */
 .nexpuyuh-page {
-    /* Using variables for the new theme to avoid hardcoding everywhere */
-    --p-bg: #11150a;
-    --p-surface: #191d12;
-    --p-surface-high: #272c1f;
-    --p-primary: #ccff80;
-    --p-secondary: #ffb95f;
-    --p-on-surface: #e0e4d2;
-    --p-on-surface-var: #c2cab0;
-    --p-on-primary: #213600;
-    --p-border: rgba(255, 255, 255, 0.1);
-    
+
     background-color: var(--p-bg);
     color: var(--p-on-surface);
     background-image: 
@@ -32,16 +22,6 @@
         padding: 2rem;
         margin-bottom: 1rem;
     }
-}
-
-/* Glass Card */
-.np-glass-card {
-    background-color: rgba(25, 29, 18, 0.4);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--p-border);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
 }
 
 .np-glass-card:hover {
@@ -334,11 +314,4 @@
     margin-top: auto;
 }
 
-/* Animations */
-.fade-in {
-    animation: fadeIn 0.4s ease-out;
-}
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+

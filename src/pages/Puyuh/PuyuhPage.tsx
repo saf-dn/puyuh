@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePuyuhStore } from '@/stores/puyuhStore';
 import { useFeedStore } from '@/stores/feedStore';
 import { useProductionStore } from '@/stores/productionStore';
-import { calculateAge, formatNumber, formatDate, getCurrentDate } from '@/utils/format';
+import { calculateAge, formatNumber, formatDate, getCurrentDate, getDateRange, getMonthYear } from '@/utils/format';
 import type { DailyFeed, Puyuh, PuyuhInput } from '@/types';
-import { Plus, Wheat, Bird, Pencil, Info, History, ChevronRight, Trash } from 'lucide-react';
+import { Plus, Wheat, Bird, Pencil, Info, History, ChevronRight, Trash, Calendar } from 'lucide-react';
+import { DailyFeedQueries } from '@/database/queries/feed.queries';
+import { useRef } from 'react';
 import PuyuhForm from '@/components/forms/PuyuhForm';
 import FeedForm from '@/components/forms/FeedForm';
 import BuyFeedForm from '@/components/forms/BuyFeedForm';
@@ -42,6 +44,21 @@ export default function PuyuhPage() {
   const [selectedHistoryGroup, setSelectedHistoryGroup] = useState<string | null>(null);
   const [puyuhToDelete, setPuyuhToDelete] = useState<Puyuh | null>(null);
   const [insufficientFeedAlert, setInsufficientFeedAlert] = useState<{required: number, count: number} | null>(null);
+
+  const [historyDate, setHistoryDate] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  });
+  const [historyFeeds, setHistoryFeeds] = useState<DailyFeed[]>([]);
+  const historyMonthInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!showFeedHistory) return;
+    const { start, end } = getDateRange(historyDate.year, historyDate.month);
+    DailyFeedQueries.getRange(start, end)
+      .then(setHistoryFeeds)
+      .catch(console.error);
+  }, [showFeedHistory, historyDate.year, historyDate.month]);
 
   // Initialize edit forms when opening modal
   const handleOpenEditStockModal = () => {
@@ -167,7 +184,7 @@ export default function PuyuhPage() {
                     </div>
                   </div>
 
-                  <div className="np-group-stats" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="np-group-stats" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {items.map((subItem, idx) => (
                         <div key={subItem.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '0.5rem', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '8px' }}>
@@ -191,7 +208,7 @@ export default function PuyuhPage() {
                       ))}
                     </div>
 
-                    <div className="np-feed-status">
+                    <div className="np-feed-status" style={{ marginTop: 'auto' }}>
                       <p className="np-group-stat-label">Status Pakan Kandang</p>
                       <div className="np-progress-row">
                         <span className={`np-progress-text text-${progressColor}`}>
@@ -245,7 +262,40 @@ export default function PuyuhPage() {
 
       {showFeedHistory && (
         <div className="np-groups-section" style={{ marginBottom: '2rem' }}>
-          <h3 className="np-section-title">Riwayat Beri Pakan Bulan Ini</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h3 className="np-section-title" style={{ marginBottom: 0 }}>Riwayat Beri Pakan {getMonthYear(historyDate.year, historyDate.month)}</h3>
+            <button
+              className="np-cycle-picker"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '2.5rem', height: '2.5rem', padding: '0',
+                backgroundColor: 'rgba(25, 29, 18, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '0.5rem', cursor: 'pointer', position: 'relative'
+              }}
+              onClick={() => {
+                const input = historyMonthInputRef.current as any;
+                if (input && 'showPicker' in input) {
+                  try { input.showPicker(); } catch (e) { input.focus(); }
+                } else {
+                  input?.focus();
+                }
+              }}
+            >
+              <Calendar size={18} className="text-primary" />
+              <input
+                ref={historyMonthInputRef}
+                type="month"
+                value={`${historyDate.year}-${historyDate.month.toString().padStart(2, '0')}`}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const [y, m] = e.target.value.split('-');
+                    setHistoryDate({ year: parseInt(y), month: parseInt(m) });
+                  }
+                }}
+                style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+              />
+            </button>
+          </div>
           {(() => {
             const groupedPuyuhs = new Map<string, Puyuh[]>();
             puyuhGroups.forEach(p => {
@@ -283,7 +333,7 @@ export default function PuyuhPage() {
                     if (!targetGroup) return null;
                     
                     const groupIds = targetGroup.items.map(i => i.id);
-                    const groupFeeds = feeds.filter(f => groupIds.includes(f.puyuh_id));
+                    const groupFeeds = historyFeeds.filter(f => groupIds.includes(f.puyuh_id));
                     
                     return (
                 <div className="np-groups-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useSummaryStore } from '@/stores/summaryStore';
 import { formatCurrency, formatNumber, getMonthYear } from '@/utils/format';
-import { TrendingUp, TrendingDown, ListFilter, BarChart3, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, Calendar } from 'lucide-react';
 import './SummaryPage.css';
 
 const formatCurrencyShort = (num: number) => {
@@ -13,6 +13,25 @@ const formatCurrencyShort = (num: number) => {
   return `Rp ${(num / 1000).toFixed(0)}rb`;
 };
 
+const HIGH_CONTRAST_COLORS = [
+  '#ccff80', // Primary Green
+  '#ffb95f', // Amber/Orange
+  '#ff80bf', // Pink
+  '#80dfff', // Cyan
+  '#b380ff', // Purple
+  '#ff8080', // Red
+  '#ffff80', // Yellow
+  '#80ffb3', // Mint
+];
+
+const stringToColor = (str: string) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return HIGH_CONTRAST_COLORS[Math.abs(hash) % HIGH_CONTRAST_COLORS.length];
+};
+
 export default function SummaryPage() {
   const { monthlySummary, isLoading, loadMonthlySummary } = useSummaryStore();
 
@@ -20,6 +39,8 @@ export default function SummaryPage() {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
   });
+
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
   const monthInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,22 +78,30 @@ export default function SummaryPage() {
   const s = monthlySummary;
   const isProfit = s.profit >= 0;
 
-  // Calculate percentage of eggs sold vs produced
-  const eggsSoldPercentage = s.eggs_produced > 0 ? (s.eggs_sold / s.eggs_produced) * 100 : 0;
-  // Calculate stroke dashoffset for the circle (Circumference is 251.2 for r=40)
-  const circleOffset = 251.2 - (251.2 * eggsSoldPercentage) / 100;
+  // Calculate egg sales status
+  const eggsSold = s.eggs_sold;
+  const eggsProduced = s.eggs_produced;
+  const eggsStock = Math.max(0, eggsProduced - eggsSold);
+  const soldPct = eggsProduced > 0 ? (eggsSold / eggsProduced) * 100 : 0;
+  const stockPct = eggsProduced > 0 ? (eggsStock / eggsProduced) * 100 : 0;
 
   // Mortality rate
   const mortalityRate = s.total_puyuh > 0 ? (s.puyuh_died_count / (s.total_puyuh + s.puyuh_died_count)) * 100 : 0;
 
-  // Process expenses for the breakdown bars
+  // Process expenses for the breakdown donut chart
   const totalExpense = s.total_expense || 1; // avoid division by zero
-  const expensesList = Object.entries(s.expense_by_category)
-    .sort((a, b) => b[1] - a[1]) // Sort largest to smallest
-    .slice(0, 3); // Take top 3
+  const allExpenses = Object.entries(s.expense_by_category)
+    .sort((a, b) => b[1] - a[1]); // Sort largest to smallest
 
-  const colors = ['bg-primary', 'bg-secondary', 'bg-tertiary-container'];
-  const textColors = ['text-primary', 'text-secondary', 'text-tertiary-dim'];
+  const expenseCircumference = 2 * Math.PI * 40; // 251.2
+  let currentOffset = 0;
+  const expenseSegments = allExpenses.map(([cat, amt]) => {
+    const pct = amt / totalExpense;
+    const strokeDasharray = `${pct * expenseCircumference} ${expenseCircumference}`;
+    const strokeDashoffset = -currentOffset;
+    currentOffset += pct * expenseCircumference;
+    return { cat, amt, pct: (pct * 100).toFixed(1), strokeDasharray, strokeDashoffset, color: stringToColor(cat) };
+  });
 
   return (
     <div className="np-summary-page fade-in">
@@ -198,29 +227,34 @@ export default function SummaryPage() {
           </div>
         </div>
 
-        {/* Monthly Progress / ROI Circle */}
-        <div className="np-glass-card rounded-xl p-6 md-col-span-4 flex flex-col items-center justify-center text-center">
+        {/* Monthly Progress Horizontal Bar */}
+        <div className="np-glass-card rounded-xl p-6 md-col-span-4 flex flex-col justify-center">
           <h3 className="font-headline-md text-headline-md text-on-surface mb-2 w-full text-left">Penjualan Telur</h3>
-          <p className="font-label-md text-label-md text-on-surface-variant mb-6 w-full text-left">Persentase telur terjual</p>
+          <p className="font-label-md text-label-md text-on-surface-variant mb-6 w-full text-left">Status stok vs penjualan bulan ini</p>
 
-          <div className="relative w-48 h-48 mb-6">
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="8"></circle>
-              <circle
-                cx="50" cy="50" r="40"
-                fill="transparent"
-                stroke="currentColor"
-                className="text-primary"
-                strokeWidth="8"
-                strokeDasharray="251.2"
-                strokeDashoffset={circleOffset}
-                strokeLinecap="round"
-              ></circle>
-            </svg>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-              <span className="font-stat-value text-32px text-on-surface block">{eggsSoldPercentage.toFixed(0)}%</span>
-              <span className="font-label-md text-xs text-on-surface-variant">Terjual</span>
+          <div style={{ width: '100%', height: '1rem', backgroundColor: 'var(--p-surface-high)', borderRadius: '9999px', display: 'flex', overflow: 'hidden', marginBottom: '1.25rem' }}>
+            <div className="bg-primary transition-all duration-500" style={{ width: `${soldPct}%`, height: '100%' }} title="Terjual"></div>
+            <div className="bg-error transition-all duration-500" style={{ width: `${stockPct}%`, height: '100%', backgroundColor: 'var(--p-error)' }} title="Sisa Stok"></div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                <div style={{ width: '0.75rem', height: '0.75rem', borderRadius: '50%', backgroundColor: 'var(--p-primary)' }}></div>
+                <span className="font-label-sm text-on-surface-variant">Terjual</span>
+              </div>
+              <div className="font-stat-value text-xl text-primary">{formatNumber(eggsSold)}</div>
             </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                <span className="font-label-sm text-on-surface-variant">Sisa Stok</span>
+                <div style={{ width: '0.75rem', height: '0.75rem', borderRadius: '50%', backgroundColor: 'var(--p-error)' }}></div>
+              </div>
+              <div className="font-stat-value text-xl text-error" style={{ color: 'var(--p-error)' }}>{formatNumber(eggsStock)}</div>
+            </div>
+          </div>
+          <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
+             <span className="font-label-md text-on-surface-variant">Total Produksi: <span className="text-on-surface">{formatNumber(eggsProduced)} butir</span></span>
           </div>
         </div>
       </div>
@@ -270,35 +304,84 @@ export default function SummaryPage() {
       <div className="np-glass-card rounded-xl p-6 mb-gutter">
         <div className="flex-between-center mb-6">
           <h3 className="font-headline-md text-headline-md text-on-surface">Rincian Pengeluaran</h3>
-          <div className="flex gap-2">
-            <button className="p-2 rounded-lg hover-bg-white-5 text-on-surface-variant transition-colors">
-              <ListFilter size={20} />
-            </button>
-          </div>
         </div>
 
-        <div className="np-expenses-grid">
-          {expensesList.length > 0 ? (
-            expensesList.map(([cat, amt], index) => {
-              const pct = ((amt / totalExpense) * 100).toFixed(1);
-              const colorClass = colors[index % colors.length];
-              const textClass = textColors[index % textColors.length];
-
-              return (
-                <div key={cat} className="bg-surface-container-50 rounded-lg p-4 border border-white-5">
-                  <div className="flex-between-center mb-2">
-                    <span className="font-label-md text-label-md text-on-surface truncate pr-2">{cat}</span>
-                    <span className={`font-label-md text-label-md ${textClass}`}>{pct}%</span>
-                  </div>
-                  <div className="w-full bg-surface-container-highest rounded-full h-2 mb-4">
-                    <div className={`${colorClass} h-2 rounded-full`} style={{ width: `${pct}%` }}></div>
-                  </div>
-                  <div className="font-body-md text-body-md text-on-surface-variant">{formatCurrency(amt)}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '2rem' }}>
+          {expenseSegments.length > 0 ? (
+            <>
+              {/* Donut Chart */}
+              <div className="relative w-48 h-48 flex-shrink-0" onMouseLeave={() => setHoveredCategory(null)}>
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="10"></circle>
+                  {expenseSegments.map((seg) => (
+                    <circle
+                      key={seg.cat}
+                      cx="50" cy="50" r="40"
+                      fill="none"
+                      stroke={seg.color}
+                      strokeWidth={hoveredCategory === seg.cat ? "14" : "10"}
+                      strokeDasharray={seg.strokeDasharray}
+                      strokeDashoffset={seg.strokeDashoffset}
+                      pointerEvents="stroke"
+                      style={{ 
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        opacity: hoveredCategory && hoveredCategory !== seg.cat ? 0.3 : 1 
+                      }}
+                      onMouseEnter={() => setHoveredCategory(seg.cat)}
+                      onClick={() => setHoveredCategory(hoveredCategory === seg.cat ? null : seg.cat)}
+                    ></circle>
+                  ))}
+                </svg>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease', pointerEvents: 'none' }}>
+                  {hoveredCategory ? (
+                    <>
+                      <span className="font-label-md text-xs mb-1" style={{ color: stringToColor(hoveredCategory) }}>{hoveredCategory}</span>
+                      <span className="font-body-md font-bold text-on-surface" style={{ fontSize: '1rem' }}>
+                        {formatCurrencyShort(expenseSegments.find(s => s.cat === hoveredCategory)?.amt || 0)}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-label-md text-xs text-on-surface-variant mb-1">Total</span>
+                      <span className="font-body-md font-bold text-on-surface" style={{ fontSize: '1.25rem' }}>{formatCurrencyShort(totalExpense)}</span>
+                    </>
+                  )}
                 </div>
-              );
-            })
+              </div>
+
+              {/* Legend List */}
+              <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }} onMouseLeave={() => setHoveredCategory(null)}>
+                {expenseSegments.map((seg) => (
+                  <div 
+                    key={seg.cat} 
+                    onMouseEnter={() => setHoveredCategory(seg.cat)}
+                    onClick={() => setHoveredCategory(hoveredCategory === seg.cat ? null : seg.cat)}
+                    style={{ 
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', borderRadius: '0.5rem', 
+                      backgroundColor: 'var(--p-surface-high)', 
+                      border: `1px solid ${hoveredCategory === seg.cat ? seg.color : 'rgba(255, 255, 255, 0.05)'}`,
+                      boxShadow: hoveredCategory === seg.cat ? `0 0 10px ${seg.color}30` : 'none',
+                      transform: hoveredCategory === seg.cat ? 'translateX(5px)' : 'none',
+                      opacity: hoveredCategory && hoveredCategory !== seg.cat ? 0.5 : 1,
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '1rem', height: '1rem', borderRadius: '50%', backgroundColor: seg.color }}></div>
+                      <span className="font-label-md text-on-surface" style={{ wordBreak: 'break-word', maxWidth: '120px' }}>{seg.cat}</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="font-label-md" style={{ color: seg.color, marginBottom: '0.25rem' }}>{seg.pct}%</div>
+                      <div className="font-body-sm text-on-surface-variant">{formatCurrency(seg.amt)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           ) : (
-            <div className="col-span-3 text-center py-4 text-on-surface-variant">
+            <div style={{ width: '100%', textAlign: 'center', padding: '1rem 0', color: 'var(--p-on-surface-var)' }}>
               Belum ada data pengeluaran bulan ini.
             </div>
           )}

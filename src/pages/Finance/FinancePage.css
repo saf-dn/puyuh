@@ -1,17 +1,6 @@
 /* FinancePage.css */
 .np-finance-page {
-    /* Theme Variables */
-    --p-bg: #11150a;
-    --p-surface: #191d12;
-    --p-surface-high: #272c1f;
-    --p-primary: #ccff80;
-    --p-secondary: #ffb95f;
-    --p-on-surface: #e0e4d2;
-    --p-on-surface-var: #c2cab0;
-    --p-on-primary: #213600;
-    --p-border: rgba(255, 255, 255, 0.1);
-    --p-error: #ffb4ab;
-    
+
     background-color: var(--p-bg);
     color: var(--p-on-surface);
     background-image: radial-gradient(circle at 50% 0%, rgba(204, 255, 128, 0.08) 0%, transparent 60%);
@@ -33,24 +22,6 @@
         margin-bottom: 1rem;
     }
 }
-
-/* Glass Card */
-.np-glass-card {
-    background-color: rgba(25, 29, 18, 0.4);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--p-border);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-}
-
-/* Utilities */
-.text-primary { color: var(--p-primary); }
-.text-secondary { color: var(--p-secondary); }
-.text-error { color: var(--p-error); }
-.text-muted { color: var(--p-on-surface-var); opacity: 0.7; }
-.bg-primary-20 { background-color: rgba(204, 255, 128, 0.2); }
-.bg-error-20 { background-color: rgba(255, 180, 171, 0.2); }
 
 /* Header */
 .np-fin-header {
